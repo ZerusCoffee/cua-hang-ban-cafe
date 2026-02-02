@@ -15,12 +15,16 @@ class GetTokenFromCookie
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Kiểm tra xem có cookie 'access_token' không
         $token = $request->cookie('access_token');
 
-        // Nếu có cookie và chưa có Header Authorization
         if ($token && !$request->header('Authorization')) {
-            // Tự động gán vào Header để Sanctum hiểu
+
+            $token = urldecode($token);
+
+            if (str_starts_with($token, 'Bearer ')) {
+                $token = trim(substr($token, 7));
+            }
+
             $request->headers->set('Authorization', 'Bearer ' . $token);
         }
 

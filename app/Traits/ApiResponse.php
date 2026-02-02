@@ -19,11 +19,17 @@ trait ApiResponse
     /**
      * Trả về response lỗi (Error)
      */
-    protected function errorResponse($message = 'Đã có lỗi xảy ra', $code = 400)
+    protected function errorResponse($message = 'Đã có lỗi xảy ra', $code = 400, $errors = null)
     {
-        return response()->json([
+        $response = [
             'status' => 'error',
             'message' => $message,
-        ], $code);
+        ];
+
+        if ($errors) {
+            $response['errors'] = $errors;
+        }
+
+        return response()->json($response, $code);
     }
 }

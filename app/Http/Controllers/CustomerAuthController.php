@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Google\Client as GoogleClient;
 use GuzzleHttp\Client as GuzzleClient;
@@ -16,21 +17,21 @@ class CustomerAuthController extends Controller
 {
     public function register(Request $request)
     {
-        // 1. Validate dữ liệu
+        //Validate dữ liệu
         $request->validate([
             "name" => "required|string|max:255",
             "email" => "required|string|email|max:255|unique:customers",
             "password" => "required|string|min:6|confirmed", // 'confirmed' yêu cầu client gửi thêm trường password_confirmation
         ]);
 
-        // 2. Tạo Customer mới
+        // Tạo Customer mới
         $customer = Customer::create([
             "name" => $request->name,
             "email" => $request->email,
-            "password" => Hash::make($request->password), // Nhớ Hash mật khẩu!
+            "password" => Hash::make($request->password), //Hash mật khẩu!
+            "is_locked" => false,
         ]);
 
-        // 3. Cấp token luôn để user đăng nhập ngay lập tức
         $token = $customer->createToken("customer-token")->plainTextToken;
 
         $data = [
@@ -51,11 +52,17 @@ class CustomerAuthController extends Controller
 
         $customer = Customer::where("email", $request->email)->first();
 
+        if ($customer && $customer->is_locked) {
+            return $this->errorResponse(
+                "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+                403,
+            );
+        }
+
         if (
             !$customer ||
             !Hash::check($request->password, $customer->password)
         ) {
-            // Thay thế đoạn json cũ bằng hàm này
             return $this->errorResponse(
                 "Thông tin đăng nhập không chính xác.",
                 401,
@@ -76,7 +83,6 @@ class CustomerAuthController extends Controller
     public function googleLogin(Request $request)
     {
         try {
-            // 1. Nhận code từ Frontend gửi lên
             $code = $request->input("code");
             if (!$code) {
                 return $this->errorResponse(
@@ -85,17 +91,14 @@ class CustomerAuthController extends Controller
                 );
             }
 
-            // 2. Cấu hình Google Client
             $client = new GoogleClient();
             $client->setClientId(env("GOOGLE_CLIENT_ID"));
             $client->setClientSecret(env("GOOGLE_CLIENT_SECRET"));
-            // QUAN TRỌNG: Phải set là 'postmessage' để khớp với luồng React SPA
             $client->setRedirectUri("postmessage");
 
             $guzzleClient = new GuzzleClient(["verify" => false]);
             $client->setHttpClient($guzzleClient);
 
-            // 3. Đổi code lấy token
             $token = $client->fetchAccessTokenWithAuthCode($code);
 
             if (isset($token["error"])) {
@@ -105,15 +108,20 @@ class CustomerAuthController extends Controller
                 );
             }
 
-            // 4. Verify ID Token để lấy thông tin user
             $payload = $client->verifyIdToken($token["id_token"]);
             if (!$payload) {
                 return $this->errorResponse("Invalid ID Token", 401);
             }
 
-            // 5. Tìm hoặc tạo Customer
             $email = $payload["email"];
             $customer = Customer::where("email", $email)->first();
+
+            if ($customer && $customer->is_locked) {
+                return $this->errorResponse(
+                    "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+                    403,
+                );
+            }
 
             if (!$customer) {
                 // Nếu chưa có thì tạo mới
@@ -122,14 +130,12 @@ class CustomerAuthController extends Controller
                     "email" => $email,
                     "email_verified_at" => $payload["email_verified"]
                         ? now()
-                        : null, // (Tuỳ chọn)
-                    // Tạo password ngẫu nhiên vì login bằng Google không cần pass
+                        : null,
                     "password" => Hash::make(Str::random(16)),
-                    // 'google_id' => $payload['sub'] // (Khuyên dùng) Nên thêm cột google_id vào bảng customers
+                    "is_locked" => false,
                 ]);
             }
 
-            // 6. Cấp Token Sanctum (Giống như login thường)
             $accessToken = $customer->createToken("customer-token")
                 ->plainTextToken;
 
@@ -164,32 +170,33 @@ class CustomerAuthController extends Controller
 
         $customer = Customer::where("email", $request->email)->first();
 
+        if ($customer->is_locked) {
+            return $this->errorResponse(
+                "Tài khoản của bạn đã bị khóa. Không thể thực hiện yêu cầu này.",
+                403,
+            );
+        }
+
         if (!$customer) {
-            // Trả về success true để tránh hacker dò email, hoặc trả về lỗi 404 tùy bạn
             return $this->errorResponse(
                 "Email không tồn tại trong hệ thống.",
                 404,
             );
         }
 
-        // 1. Tạo token ngẫu nhiên
         $token = Str::random(60);
 
-        // 2. Lưu token vào bảng password_reset_tokens
-        // Xóa token cũ của email này nếu có
         DB::table("password_reset_tokens")
             ->where("email", $request->email)
             ->delete();
 
         DB::table("password_reset_tokens")->insert([
             "email" => $request->email,
-            "token" => $token, // Không cần hash token ở đây nếu muốn đơn giản, hoặc hash nếu muốn bảo mật cao hơn (mặc định Laravel hash token user)
+            "token" => $token, // Thích thì Hash Token ở đây
             "created_at" => Carbon::now(),
         ]);
 
-        // 3. Gửi mail
-        // Đảm bảo Model Customer có use Notifiable;
-        $customer->notify(new ResetPasswordRequest($token));
+        $customer->notify(new ResetPasswordRequest($token)); // gửi vô mail
 
         return $this->successResponse(
             null,
@@ -205,7 +212,6 @@ class CustomerAuthController extends Controller
             "password" => "required|min:6|confirmed",
         ]);
 
-        // 1. Kiểm tra token trong database
         $resetRecord = DB::table("password_reset_tokens")
             ->where("email", $request->email)
             ->where("token", $request->token)
@@ -218,7 +224,7 @@ class CustomerAuthController extends Controller
             );
         }
 
-        // 2. Kiểm tra thời hạn token (ví dụ: hết hạn sau 60 phút)
+        // Kiểm tra token đã hết hạn sau mỗi 5p
         $tokenCreatedAt = Carbon::parse($resetRecord->created_at);
         if ($tokenCreatedAt->addMinutes(5)->isPast()) {
             DB::table("password_reset_tokens")
@@ -230,16 +236,21 @@ class CustomerAuthController extends Controller
             );
         }
 
-        // 3. Cập nhật mật khẩu cho Customer
         $customer = Customer::where("email", $request->email)->first();
         if (!$customer) {
             return $this->errorResponse("Không tìm thấy người dùng.", 404);
         }
 
+        if ($customer->is_locked) {
+            return $this->errorResponse(
+                "Tài khoản của bạn đã bị khóa. Không thể thực hiện yêu cầu này.",
+                403,
+            );
+        }
+
         $customer->password = Hash::make($request->password);
         $customer->save();
 
-        // 4. Xóa token sau khi dùng xong
         DB::table("password_reset_tokens")
             ->where("email", $request->email)
             ->delete();
@@ -260,6 +271,13 @@ class CustomerAuthController extends Controller
         $customer = Customer::find(auth()->id());
         if (!$customer) {
             return $this->errorResponse("Không tìm thấy người dùng.", 404);
+        }
+
+        if ($customer->is_locked) {
+            return $this->errorResponse(
+                "Tài khoản của bạn đã bị khóa. Không thể thực hiện yêu cầu này.",
+                403,
+            );
         }
 
         $customer->name = $request->name;
@@ -283,13 +301,84 @@ class CustomerAuthController extends Controller
             return $this->errorResponse("Không tìm thấy người dùng.", 404);
         }
 
-        $avatar = $request->file("avatar");
-        $avatarName = time() . "." . $avatar->getClientOriginalExtension();
-        $avatar->move(public_path("avatars"), $avatarName);
+        if ($customer->is_locked) {
+            return $this->errorResponse(
+                "Tài khoản của bạn đã bị khóa. Không thể thực hiện yêu cầu này.",
+                403,
+            );
+        }
 
-        $customer->avatar = $avatarName;
+        if (
+            $customer->avatar &&
+            Storage::disk("public")->exists($customer->avatar)
+        ) {
+            Storage::disk("public")->delete($customer->avatar);
+        }
+
+        $path = $request->file("avatar")->store("avatars", "public");
+
+        $customer->avatar = $path;
         $customer->save();
 
-        return $this->successResponse($customer, "Cập nhật avatar thành công.");
+        return $this->successResponse(
+            [
+                ...$customer->toArray(),
+                "avatar_url" => asset("storage/" . $path),
+            ],
+            "Cập nhật avatar thành công.",
+        );
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            "current_password" => "required|string|min:6",
+            "new_password" => "required|string|min:6",
+            "new_password_confirmation" => "required|string|min:6",
+        ]);
+
+        if ($request->new_password !== $request->new_password_confirmation) {
+            return $this->errorResponse(
+                "Mật khẩu xác nhận không khớp.",
+                422
+            );
+        }
+
+        $customer = Customer::find(auth()->id());
+        if (!$customer) {
+            return $this->errorResponse("Không tìm thấy người dùng.", 404);
+        }
+
+         if ($customer->is_locked) {
+            return $this->errorResponse(
+                "Tài khoản của bạn đã bị khóa. Không thể thực hiện yêu cầu này.",
+                403,
+            );
+        }
+
+        if (!Hash::check($request->current_password, $customer->password)) {
+            return $this->errorResponse(
+                "Mật khẩu hiện tại không chính xác.",
+                422
+            );
+        }
+
+        if (Hash::check($request->new_password, $customer->password)) {
+            return $this->errorResponse(
+                "Mật khẩu mới không được trùng với mật khẩu hiện tại.",
+                422
+            );
+        }
+
+        $customer->password = Hash::make($request->new_password);
+        $customer->save();
+
+        $currentTokenId = $request->user()->currentAccessToken()->id;
+        $customer->tokens()->where('id', '!=', $currentTokenId)->delete(); //logout all device
+
+        return $this->successResponse(
+            null,
+            "Đổi mật khẩu thành công!"
+        );
     }
 }

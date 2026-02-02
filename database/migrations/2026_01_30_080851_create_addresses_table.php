@@ -22,9 +22,6 @@ return new class extends Migration {
             $table->string("ward");
             $table->string("province");
             $table->boolean("is_default")->default(false);
-            $table
-                ->enum("type", ["shipping", "billing", "both"])
-                ->default("shipping");
             $table->timestamps();
         });
     }

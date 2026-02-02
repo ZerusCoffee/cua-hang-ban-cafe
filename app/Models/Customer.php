@@ -14,10 +14,11 @@ class Customer extends CustomerAuthenticatable
     protected $fillable = [
         "name",
         "email",
+        "avatar",
         "phone",
         "password",
         "email_verified_at",
-        "avatar",
+        "is_locked",
     ];
 
     protected $hidden = ["password", "remember_token"];
@@ -27,6 +28,7 @@ class Customer extends CustomerAuthenticatable
         return [
             "password" => "hashed",
             "email_verified_at" => "datetime",
+            "is_locked" => "boolean",
         ];
     }
 }

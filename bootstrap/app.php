@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('api', [
             GetTokenFromCookie::class,
         ]);
+
+        $middleware->encryptCookies(except: [
+            'access_token',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Bắt sự kiện render lỗi
