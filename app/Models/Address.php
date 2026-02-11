@@ -17,7 +17,7 @@ class Address extends Model
     ];
 
     protected $casts = [
-        "is_default" => "boolean",
+        "is_default" => "boolean"
     ];
 
     public function customer()
