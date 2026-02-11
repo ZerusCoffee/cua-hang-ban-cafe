@@ -32,8 +32,7 @@ class ResetPasswordRequest extends Notification
      */
     public function toMail($notifiable)
     {
-        // Link này trỏ về trang React/NextJS của bạn
-        // Ví dụ: http://localhost:3000/reset-password?token=xyz&email=abc
+        // http://localhost:3000/reset-password?token=xyz&email=abc
         $frontendUrl = env('PUBLIC_CLIENT_URL');
         $url = $frontendUrl . '/account/reset-password?token=' . $this->token . '&email=' . $notifiable->email;
 
