@@ -103,7 +103,6 @@ class AddressController extends Controller
         try {
             $customer = auth()->user();
 
-            // Kiểm tra quyền truy cập
             if ($address->customer_id !== $customer->id) {
                 return $this->errorResponse(
                     "Bạn không có quyền truy cập địa chỉ này",
@@ -175,7 +174,6 @@ class AddressController extends Controller
                 "province" => $request->province,
             ];
 
-            // Nếu muốn đổi địa chỉ mặc định
             if ($request->has("is_default")) {
                 if ($address->is_default && !$request->boolean("is_default")) {
                     return $this->errorResponse(
@@ -223,7 +221,6 @@ class AddressController extends Controller
                 $customer->id,
             )->count();
 
-            // Nếu xóa địa chỉ mặc định, cần đặt địa chỉ khác làm mặc định
             if ($address->is_default) {
                 $newDefaultAddress = Address::where(
                     "customer_id",
@@ -316,7 +313,6 @@ class AddressController extends Controller
     public function getProvinces()
     {
         try {
-            // Cache để tăng performance (1 ngày)
             $provinces = Cache::remember("provinces", 86400, function () {
                 $response = Http::withoutVerifying()
                     ->timeout(30)
