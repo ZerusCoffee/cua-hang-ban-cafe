@@ -67,30 +67,13 @@ class ProductsTable
                     ->sortable()
                     ->description('Tỷ lệ so với cost', 'above'),
 
-                TextColumn::make('suggested_price')
-                    ->label('Giá đề xuất (tự động)')
-                    ->getStateUsing(function ($record) {
-                        $totalCost = 0;
-                        if ($record->recipe && $record->recipe->recipeDetails) {
-                            foreach ($record->recipe->recipeDetails as $detail) {
-                                if ($detail->ingredient) {
-                                    $totalCost += floatval($detail->ingredient->cost_price) * floatval($detail->amount);
-                                }
-                            }
-                        }
-
-                        $profitRate = floatval($record->profit_rate ?? 0);
-                        if ($totalCost > 0) {
-                            $price = $totalCost * (1 + $profitRate / 100);
-                            return intval(ceil($price / 1000) * 1000);
-                        }
-
-                        return 0;
-                    })
+                TextColumn::make('recommended_price')
+                    ->label('Giá đề xuất (từ DB)')
                     ->numeric(decimalPlaces: 0)
                     ->suffix('đ')
                     ->color('success')
                     ->weight('bold')
+                    ->sortable()
                     ->description(function ($record) {
                         $totalCost = 0;
                         if ($record->recipe && $record->recipe->recipeDetails) {
@@ -101,15 +84,13 @@ class ProductsTable
                             }
                         }
 
-                        $profitRate = floatval($record->profit_rate ?? 0);
-                        if ($totalCost > 0) {
-                            $price = $totalCost * (1 + $profitRate / 100);
-                            $suggestedPrice = intval(ceil($price / 1000) * 1000);
-                            $profit = $suggestedPrice - $totalCost;
+                        $recommendedPrice = floatval($record->recommended_price ?? 0);
+                        if ($totalCost > 0 && $recommendedPrice > 0) {
+                            $profit = $recommendedPrice - $totalCost;
                             return 'Lợi nhuận: ' . number_format($profit) . 'đ';
                         }
 
-                        return 'Chưa có nguyên liệu';
+                        return 'Chưa có dữ liệu';
                     }, position: 'above'),
 
                 IconColumn::make('is_active')

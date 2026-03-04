@@ -42,7 +42,7 @@ class IngredientForm
                     ->unique(ignoreRecord: true)
                     ->placeholder('Tự động nếu để trống'),
 
-                TextInput::make('price')
+                TextInput::make('cost_price')
                     ->label('Giá Nhập')
                     ->required()
                     ->numeric()

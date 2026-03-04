@@ -211,12 +211,11 @@ class ProductForm
                                 ->collapsible()
                                 ->defaultItems(1)
                                 ->columnSpanFull()
-                                ->live(onBlur: false)
+                                ->live()
                                 ->afterStateUpdated(function (Set $set, Get $get, Livewire $livewire) {
                                     self::updateAllDisplays($set, $livewire);
                                 })
                                 ->deleteAction(fn($action) => $action->requiresConfirmation()),
-                            // Đã bỏ total_cost_display và suggested_price_preview_display
                         ])
                         ->columns(2),
 
@@ -232,7 +231,6 @@ class ProductForm
                                     $component->state(number_format(self::calculateTotalCostFromGet($get)));
                                 }),
 
-                            // UI nhập — KHÔNG lưu DB, chỉ dùng để tính
                             TextInput::make('profit_rate_input')
                                 ->label('Tỷ lệ lợi nhuận (%)')
                                 ->required()
@@ -243,9 +241,7 @@ class ProductForm
                                 ->default(30)
                                 ->live(debounce: 500)
                                 ->step(0.01)
-                                ->dehydrated(false)
                                 ->afterStateHydrated(function (TextInput $component, Get $get) {
-                                    // Khi edit: hiển thị profit_rate thực tế đã lưu từ DB
                                     $savedRate = $get('profit_rate');
                                     if ($savedRate !== null) {
                                         $component->state($savedRate);
@@ -262,23 +258,9 @@ class ProductForm
                                 ->suffix('đ')
                                 ->afterStateHydrated(function (TextInput $component, Get $get) {
                                     $totalCost = self::calculateTotalCostFromGet($get);
-                                    $profitRate = floatval($get('profit_rate') ?? 30);
+                                    $profitRate = floatval($get('profit_rate_input') ?? $get('profit_rate') ?? 30);
                                     $component->state(number_format(self::calculateSuggestedPrice($totalCost, $profitRate)));
                                 }),
-
-                            // Field ẩn — lưu suggested_price vào DB
-                            TextInput::make('suggested_price')
-                                ->label('')
-                                ->numeric()
-                                ->hidden()
-                                ->dehydrated(true),
-
-                            // Field ẩn — lưu profit_rate THỰC TẾ sau làm tròn vào DB
-                            TextInput::make('profit_rate')
-                                ->label('')
-                                ->numeric()
-                                ->hidden()
-                                ->dehydrated(true),
 
                             TextInput::make('profit_calculation_display')
                                 ->label('Lợi nhuận dự kiến')
@@ -287,7 +269,7 @@ class ProductForm
                                 ->columnSpanFull()
                                 ->afterStateHydrated(function (TextInput $component, Get $get) {
                                     $totalCost = self::calculateTotalCostFromGet($get);
-                                    $profitRate = floatval($get('profit_rate') ?? 30);
+                                    $profitRate = floatval($get('profit_rate_input') ?? $get('profit_rate') ?? 30);
                                     $suggestedPrice = self::calculateSuggestedPrice($totalCost, $profitRate);
                                     if ($totalCost > 0) {
                                         $profit = $suggestedPrice - $totalCost;
@@ -303,11 +285,8 @@ class ProductForm
                     ->columnSpanFull()
                     ->skippable()
                     ->live()
-                    ->afterStateUpdated(function (Set $set, Get $get) {
-                        $totalCost = self::calculateTotalCostFromGet($get);
-                        $profitRate = floatval($get('profit_rate') ?? 0);
-                        $suggestedPrice = self::calculateSuggestedPrice($totalCost, $profitRate);
-                        $set('suggested_price', $suggestedPrice);
+                    ->afterStateUpdated(function (Set $set, Get $get, Livewire $livewire) {
+                        self::updateAllDisplays($set, $livewire);
                     }),
             ]);
     }
@@ -352,26 +331,34 @@ class ProductForm
     private static function updateAllDisplays(Set $set, Livewire $livewire): void
     {
         $totalCost = self::calculateTotalCostFromLivewire($livewire);
-        // Đọc từ profit_rate_input (UI) hoặc profit_rate (hidden/DB)
-        $profitRate = floatval($livewire->data['profit_rate_input'] ?? $livewire->data['profit_rate'] ?? 30);
-        $suggestedPrice = self::calculateSuggestedPrice($totalCost, $profitRate);
+        $profitRateInput = floatval($livewire->data['profit_rate_input'] ?? 30);
 
-        // Tính profit_rate thực tế từ giá đã làm tròn: (suggested - cost) / cost * 100
-        $actualProfitRate = $totalCost > 0 ? round(($suggestedPrice - $totalCost) / $totalCost * 100, 2) : 0;
+        // Tính toán suggested price
+        $suggestedPrice = self::calculateSuggestedPrice($totalCost, $profitRateInput);
 
-        // Lưu vào field ẩn DB
-        $set('suggested_price', $suggestedPrice);
-        $set('profit_rate', $actualProfitRate);
+        // Tính toán profit rate thực tế sau khi làm tròn
+        $actualProfitRate = 0;
+        if ($totalCost > 0 && $suggestedPrice > 0) {
+            $actualProfitRate = round(($suggestedPrice - $totalCost) / $totalCost * 100, 2);
+        }
 
-        // Display fields — Step "Giá bán"
+        // Cập nhật các trường hiển thị
         $set('total_cost_final_display', number_format($totalCost));
         $set('suggested_price_display', number_format($suggestedPrice));
+
+        // Cập nhật profit_calculation_display
         if ($totalCost > 0) {
             $profit = $suggestedPrice - $totalCost;
             $profitPercent = round(($profit / $totalCost) * 100, 1);
             $set('profit_calculation_display', number_format($profit) . 'đ (' . $profitPercent . '%)');
         } else {
             $set('profit_calculation_display', 'Chưa có nguyên liệu');
+        }
+
+        // Lưu actual_profit_rate vào data để xử lý trong beforeSave/mutateFormDataBeforeCreate
+        if (property_exists($livewire, 'data')) {
+            $livewire->data['actual_profit_rate'] = $actualProfitRate;
+            $livewire->data['calculated_suggested_price'] = $suggestedPrice;
         }
     }
 }
