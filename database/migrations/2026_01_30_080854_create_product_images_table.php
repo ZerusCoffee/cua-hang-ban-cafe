@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('image_path'); // Đường dẫn ảnh
             $table->string('alt_text')->nullable();
             $table->boolean('is_primary')->default(false); // Ảnh chính
-            $table->integer('sort_order')->default(0); // Thứ tự hiển thị
             $table->timestamps();
         });
     }

@@ -14,11 +14,9 @@ return new class extends Migration
         Schema::create('recipes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->decimal('quantity', 10, 2); // Số lượng nguyên liệu
-            $table->text('notes')->nullable(); // Ghi chú
-            $table->boolean('is_active')->default(true);
-            $table->integer('sort_order')->default(0);
+            $table->string('name');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
