@@ -14,28 +14,28 @@ class IngredientSeeder extends Seeder
             [
                 'name' => 'Đường trắng',
                 'unit' => 'Gram',
-                'price' => 18000,
+                'cost_price' => 18000,
                 'stock' => 5000,
                 'threshold' => 1000,
             ],
             [
                 'name' => 'Sữa tươi',
                 'unit' => 'Milliliter',
-                'price' => 32000,
+                'cost_price' => 32000,
                 'stock' => 3000,
                 'threshold' => 500,
             ],
             [
                 'name' => 'Cà phê hạt',
                 'unit' => 'Gram',
-                'price' => 250000,
+                'cost_price' => 250000,
                 'stock' => 2000,
                 'threshold' => 300,
             ],
             [
                 'name' => 'Viên phô mai',
                 'unit' => 'Piece',
-                'price' => 800,
+                'cost_price' => 800,
                 'stock' => 1000,
                 'threshold' => 200,
             ],
@@ -48,7 +48,7 @@ class IngredientSeeder extends Seeder
             Ingredient::create([
                 'name' => $item['name'],
                 'unit_id' => $unit->id,
-                'price' => $item['price'],
+                'cost_price' => $item['cost_price'],
                 'stock' => $item['stock'],
                 'threshold' => $item['threshold'],
             ]);

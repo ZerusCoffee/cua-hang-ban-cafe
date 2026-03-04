@@ -15,13 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->text('description')->nullable();
-            $table->string('image')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->integer('sort_order')->default(0);
-            $table->string('meta_title')->nullable(); //Tìm kiếm theo tiêu đề
-            $table->text('meta_description')->nullable(); //Tìm kiếm theo mô tả
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

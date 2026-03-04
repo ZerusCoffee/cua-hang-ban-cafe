@@ -4,21 +4,37 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ingredient extends Model
 {
-    /** @use HasFactory<\Database\Factories\IngredientFactory> */
-    use HasFactory;
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
         'unit_id',
-        'price',
+        'cost_price',
         'stock',
         'threshold'
     ];
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
+    public function importOrderDetails(): HasMany
+    {
+        return $this->hasMany(ImportOrderDetail::class);
+    }
+
+    public function recipeDetails(): HasMany
+    {
+        return $this->hasMany(RecipeDetail::class);
+    }
+
 
     protected static function booted()
     {
@@ -30,6 +46,16 @@ class Ingredient extends Model
 
             $ingredient->saveQuietly();
         });
+    }
+
+    public function safeDelete(): void
+    {
+        $hasImport = $this->importOrderDetails()->exists();
+        if ($hasImport) {
+            $this->delete(); //softDelete
+        } else {
+            $this->forceDelete(); //delete
+        }
     }
 
     public function scopeSearch($query, $keyword)

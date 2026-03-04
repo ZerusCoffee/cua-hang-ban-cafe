@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Filament\Resources\ImportOrders\Schemas;
+
+use App\Models\Ingredient;
+use App\Models\Supplier;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+
+class ImportOrderForm
+{
+    public static function configure(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                TextInput::make('code')
+                    ->label('Mã phiếu nhập')
+                    ->placeholder('Tự động tạo (PN-0001)')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->visibleOn('edit'),
+
+                Select::make('supplier_id')
+                    ->label('Nhà cung cấp')
+                    ->options(Supplier::query()->pluck('name', 'id'))
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->createOptionForm([
+                        TextInput::make('name')
+                            ->label('Tên nhà cung cấp')
+                            ->required(),
+                        TextInput::make('phone')
+                            ->label('Số điện thoại')
+                            ->tel(),
+                        TextInput::make('email')
+                            ->label('Email')
+                            ->email(),
+                    ])
+                    ->createOptionUsing(fn (array $data): int => Supplier::create($data)->id),
+
+                Textarea::make('notes')
+                    ->label('Ghi chú')
+                    ->rows(2)
+                    ->nullable()
+                    ->columnSpanFull(),
+
+                Repeater::make('details')
+                    ->label('Danh sách nguyên liệu')
+                    ->relationship('details')
+                    ->schema([
+                        Select::make('ingredient_id')
+                            ->label('Nguyên liệu')
+                            ->options(
+                                Ingredient::query()
+                                    ->with('unit')
+                                    ->get()
+                                    ->mapWithKeys(fn ($i) => [
+                                        $i->id => $i->name . ' (' . ($i->unit?->symbol ?? '') . ')',
+                                    ])
+                            )
+                            ->searchable()
+                            ->required()
+                            ->distinct()
+                            ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                            ->columnSpan(2),
+
+                        TextInput::make('quantity')
+                            ->label('Số lượng')
+                            ->required()
+                            ->numeric()
+                            ->minValue(0)
+                            ->live()
+                            ->afterStateUpdated(fn ($state, callable $get, callable $set) =>
+                                $set('total_price', $state * $get('unit_price'))
+                            ),
+
+                        TextInput::make('unit_price')
+                            ->label('Đơn giá')
+                            ->required()
+                            ->numeric()
+                            ->suffix('₫')
+                            ->minValue(0)
+                            ->live()
+                            ->afterStateUpdated(fn ($state, callable $get, callable $set) =>
+                                $set('total_price', $state * $get('quantity'))
+                            ),
+
+                        TextInput::make('total_price')
+                            ->label('Thành tiền')
+                            ->numeric()
+                            ->suffix('₫')
+                            ->disabled()
+                            ->dehydrated(false),
+                    ])
+                    ->columns(4)
+                    ->addActionLabel('Thêm nguyên liệu')
+                    ->reorderable()
+                    ->collapsible()
+                    ->defaultItems(1)
+                    ->columnSpanFull()
+                    ->disabled(fn ($record) => $record?->status === 'completed'),
+            ])
+            ->columns(2);
+    }
+}
