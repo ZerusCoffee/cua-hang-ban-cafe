@@ -28,7 +28,6 @@ class Product extends Model
         'view_count',
     ];
 
-    protected $appends = ['suggested_price'];
 
     protected $casts = [
         'recommended_price' => 'decimal:2',
@@ -62,22 +61,6 @@ class Product extends Model
         });
     }
 
-    /**
-     * Tính giá bán đề xuất:
-     * ceil(cost × (1 + profit_rate/100) / 1000) × 1000
-     */
-    public function getSuggestedPriceAttribute(): int
-    {
-        $cost = $this->cost_price;
-
-        if ($cost <= 0) {
-            return 0;
-        }
-
-        $raw = $cost * (1 + $this->profit_rate / 100);
-
-        return (int) ceil($raw / 1000) * 1000;
-    }
 
     protected static function booted(): void
     {
