@@ -13,9 +13,11 @@ return new class extends Migration {
         Schema::create('product_options', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->foreignId('option_group_id')->constrained('option_groups')->onDelete('cascade');
+            $table->foreignId('option_id')->constrained('options')->onDelete('cascade');
             $table->decimal('additional_price', 10, 2); //size L + 4000d
             $table->timestamps();
+
+            $table->unique(['product_id', 'option_id']);
         });
     }
 

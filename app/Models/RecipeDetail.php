@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RecipeDetail extends Model
 {
     protected $fillable = [
-        'recipe_id',
+        'product_id',
         'ingredient_id',
         'amount',
     ];
@@ -17,9 +17,9 @@ class RecipeDetail extends Model
         'amount' => 'decimal:3',
     ];
 
-    public function recipe(): BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(Recipe::class);
+        return $this->belongsTo(Product::class);
     }
 
     public function ingredient(): BelongsTo

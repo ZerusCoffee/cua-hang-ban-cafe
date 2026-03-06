@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -28,6 +31,10 @@ class Product extends Model
         'view_count',
     ];
 
+    protected $with = [
+        'category',
+        'primaryImage',
+    ];
 
     protected $casts = [
         'recommended_price' => 'decimal:2',
@@ -37,30 +44,46 @@ class Product extends Model
         'view_count' => 'integer',
     ];
 
+    #[Scope]
+    protected function active(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    #[Scope]
+    protected function featured(Builder $query): Builder
+    {
+        return $query->where('is_featured', true);
+    }
+
+    public function recipeDetails(): HasMany
+    {
+        return $this->hasMany(RecipeDetail::class);
+    }
+
+
     /**
      * Tính giá cost từ recipe:
      * Σ (amount × unit_price của nguyên liệu trong lô nhập gần nhất)
      */
     public function getCostPriceAttribute(): float
     {
-        $recipe = $this->recipe?->load('recipeDetails.ingredient');
+        $recipeDetails = $this->recipeDetails()->with('ingredient')->get();
 
-        if (! $recipe) {
+        if ($recipeDetails->isEmpty()) {
             return 0;
         }
 
-        return $recipe->recipeDetails->sum(function ($detail) {
-            // Lấy giá nhập gần nhất của nguyên liệu từ import_order_details
-            $latestPrice = \App\Models\ImportOrderDetail::query()
+        return $recipeDetails->sum(function ($detail) {
+            $latestPrice = ImportOrderDetail::query()
                 ->where('ingredient_id', $detail->ingredient_id)
-                ->whereHas('importOrder', fn ($q) => $q->where('status', 'completed'))
+                ->whereHas('importOrder', fn($q) => $q->where('status', 'completed'))
                 ->latest()
-                ->value('unit_price') ?? $detail->ingredient?->price ?? 0;
+                ->value('unit_price') ?? $detail->ingredient?->cost_price ?? 0;
 
             return $detail->amount * $latestPrice;
         });
     }
-
 
     protected static function booted(): void
     {
@@ -87,6 +110,10 @@ class Product extends Model
                 $product->slug = Str::slug($product->name);
             }
         });
+
+        static::deleting(function (Product $product) {
+            $product->recipeDetails()->delete();
+        });
     }
 
     public function category(): BelongsTo
@@ -104,8 +131,60 @@ class Product extends Model
         return $this->hasOne(ProductImage::class)->where('is_primary', true);
     }
 
-    public function recipe(): HasOne
+    public function productOptions(): HasMany
     {
-        return $this->hasOne(Recipe::class);
+        return $this->hasMany(ProductOption::class);
+    }
+
+    public function options(): BelongsToMany
+    {
+        return $this->belongsToMany(Option::class, 'product_options')
+            ->withPivot('additional_price')
+            ->withTimestamps();
+    }
+
+    public function optionModifiers(): HasMany
+    {
+        return $this->hasMany(ProductOptionModifier::class);
+    }
+
+    /**
+     * Lấy giá của 1 option cụ thể
+     */
+    public function getOptionPrice(int $optionId): float
+    {
+        $productOption = $this->productOptions()
+            ->where('option_id', $optionId)
+            ->first();
+
+        return $productOption?->additional_price ?? 0;
+    }
+
+    /**
+     * Lấy tất cả option theo nhóm
+     */
+    public function getOptionsByGroup(): array
+    {
+        $result = [];
+
+        foreach ($this->productOptions as $productOption) {
+            $groupName = $productOption->option->group->name;
+            $optionValue = $productOption->option->value;
+
+            if (!isset($result[$groupName])) {
+                $result[$groupName] = [
+                    'group' => $productOption->option->group,
+                    'options' => []
+                ];
+            }
+
+            $result[$groupName]['options'][] = [
+                'id' => $productOption->option_id,
+                'value' => $optionValue,
+                'price' => $productOption->additional_price
+            ];
+        }
+
+        return $result;
     }
 }
