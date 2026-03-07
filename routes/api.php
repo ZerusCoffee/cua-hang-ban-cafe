@@ -13,4 +13,7 @@ Route::prefix("v1")->group(function () {
     Route::prefix("address")->group(base_path('routes/api/address.php'));
 
     Route::prefix("product")->group(base_path('routes/api/product.php'));
+
+    Route::prefix("category")->group(base_path('routes/api/category.php'));
+
 });
