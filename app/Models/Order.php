@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
@@ -12,138 +15,124 @@ class Order extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'order_number',
-        'customer_id',
-        'coupon_id',
-        'subtotal',
-        'discount_amount',
-        'shipping_fee',
-        'tax_amount',
-        'total',
-        'shipping_full_name',
-        'shipping_phone',
-        'shipping_address_details',
-        'shipping_ward',
-        'shipping_province',
-        'payment_method',
-        'payment_status',
-        'status',
-        'transaction_id',
-        'tracking_number',
-        'customer_notes',
-        'admin_notes',
+        'order_number', 'customer_id', 'coupon_id',
+        'subtotal', 'discount_amount', 'shipping_fee', 'tax_amount', 'total',
+        'shipping_full_name', 'shipping_phone', 'shipping_address_details',
+        'shipping_ward', 'shipping_province',
+        'payment_method', 'payment_status', 'status',
+        'transaction_id', 'tracking_number',
+        'customer_notes', 'admin_notes',
     ];
 
     protected $casts = [
-        'subtotal' => 'decimal:2',
-            'discount_amount' => 'decimal:2',
-            'shipping_fee' => 'decimal:2',
-            'tax_amount' => 'decimal:2',
-            'total' => 'decimal:2',
+        'subtotal'        => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'shipping_fee'    => 'decimal:2',
+        'tax_amount'      => 'decimal:2',
+        'total'           => 'decimal:2',
     ];
 
-    // Lọc đơn hàng theo trạng thái
-    #[Scope()]
-    protected function ofStatus(Builder $builder, string $status){
+    #[Scope]
+    protected function ofStatus(Builder $builder, string $status): Builder
+    {
         return $builder->where('status', $status);
     }
 
-    // Lọc đơn hàng theo trạng thái thanh toán
-    #[Scope()]
-    protected function paymentStatus(Builder $builder, string $paymentStatus){
+    #[Scope]
+    protected function paymentStatus(Builder $builder, string $paymentStatus): Builder
+    {
         return $builder->where('payment_status', $paymentStatus);
     }
 
-    //Lọc đơn hàng đang chờ
-    #[Scope()]
-    protected function pending(Builder $builder){
+    #[Scope]
+    protected function pending(Builder $builder): Builder
+    {
         return $builder->where('status', 'pending');
     }
 
-    //Lọc đơn hàng đã xác nhận
-    #[Scope()]
-    protected function confirmed(Builder $builder){
+    #[Scope]
+    protected function confirmed(Builder $builder): Builder
+    {
         return $builder->where('status', 'confirmed');
     }
 
-    //Lọc đơn hàng đang giao
-    #[Scope()]
-    protected function shipped(Builder $builder){
-        return $builder->where('status', 'shipped');
+    #[Scope]
+    protected function delivered(Builder $builder): Builder
+    {
+        return $builder->where('status', 'delivered');
     }
 
-    //Lọc đơn hàng đã hủy
-    #[Scope()]
-    protected function cancelled(Builder $builder){
+    #[Scope]
+    protected function cancelled(Builder $builder): Builder
+    {
         return $builder->where('status', 'cancelled');
     }
 
-    public function customer()
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function coupon()
+    public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
     }
 
-    public function items()
+    public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    public function statusHistories()
+    public function statusHistories(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class)->orderBy('created_at', 'desc');
     }
 
-
-    public function getFullAddressAttribute()
+    public function profitLogs(): HasManyThrough
     {
-        return implode(', ', [
-            $this->shipping_address_details,
-            $this->shipping_ward,
-            $this->shipping_province
-        ]);
+        return $this->hasManyThrough(OrderProfitLog::class, OrderItem::class);
     }
 
-    public function updateStatus($newStatus, $note = null, $userId = null){
+    public function getFullAddressAttribute(): string
+    {
+        return implode(', ', array_filter([
+            $this->shipping_address_details,
+            $this->shipping_ward,
+            $this->shipping_province,
+        ]));
+    }
+
+    public function updateStatus(string $newStatus, ?string $note = null, ?int $userId = null): void
+    {
         $this->update(['status' => $newStatus]);
 
-        // Ghi lại lịch sử thay đổi trạng thái
         $this->statusHistories()->create([
-            'status' => $newStatus,
-            'notes' => $note,
+            'status'  => $newStatus,
+            'notes'   => $note,
             'user_id' => $userId,
         ]);
     }
 
-
-     protected static function boot(){
+    protected static function boot(): void
+    {
         parent::boot();
 
-        static::creating(function($order){
-            if (empty($order->order_number)){
+        static::creating(function (Order $order) {
+            if (empty($order->order_number)) {
                 $order->order_number = 'ORD-' . strtoupper(uniqid());
             }
         });
 
-        static::created(function($order){
-            // Tạo bản ghi lịch sử trạng thái khi đơn hàng được tạo
+        static::created(function (Order $order) {
             $order->statusHistories()->create([
                 'status' => $order->status,
-                'notes' => 'Order created',
+                'notes'  => 'Đơn hàng được tạo',
             ]);
-            // Có thể thêm logic gửi email thông báo đơn hàng mới ở đây
         });
 
-        static::deleting(function($order){
-            // Xóa các mục trong đơn hàng khi đơn hàng bị xóa
+        static::deleting(function (Order $order) {
             $order->items()->delete();
-            // Xóa lịch sử trạng thái đơn hàng khi đơn hàng bị xóa
             $order->statusHistories()->delete();
         });
     }
-
 }
