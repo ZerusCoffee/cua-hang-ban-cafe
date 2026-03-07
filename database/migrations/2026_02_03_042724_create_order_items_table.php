@@ -18,8 +18,9 @@ return new class extends Migration
             $table->string('product_name');
             $table->string('product_sku');
             $table->decimal('price', 10, 2);
+            $table->decimal('unit_cost', 10, 2)->default(0); // Giá vốn lúc bán
             $table->integer('quantity');
-            $table->json('options'); // đường đá size
+            $table->json('options')->nullable(); // đường đá size
             $table->decimal('subtotal', 10, 2);
             $table->timestamps();
         });
