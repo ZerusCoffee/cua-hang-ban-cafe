@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('sku')->unique();
-            $table->decimal('recommended_price', 15, 2)->nullable(); // Giá bán đề xuất
-            $table->decimal('profit_rate', 20, 2); //Tỉ suất lợi nhuận
+            $table->decimal('recommended_price', 15, 2)->default(0); // Giá bán đề xuất
+            $table->decimal('profit_rate', 20, 2)->default(0); //Tỉ suất lợi nhuận
             $table->text('short_description')->nullable();
             $table->text('description')->nullable();
             $table->boolean('is_featured')->default(false); // Sản phẩm nổi bật

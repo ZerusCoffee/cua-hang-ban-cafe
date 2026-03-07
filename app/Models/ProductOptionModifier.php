@@ -8,18 +8,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ProductOptionModifier extends Model
 {
     protected $fillable = [
-        'product_id',
+        'product_option_id',
         'ingredient_id',
-        'deltaQuantity',
+        'delta_quantity',
     ];
 
     protected $casts = [
-        'deltaQuantity' => 'decimal:2',
+        'delta_quantity' => 'decimal:2',
     ];
 
-    public function product(): BelongsTo
+    public function productOption(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(ProductOption::class, 'product_option_id');
     }
 
     public function ingredient(): BelongsTo
@@ -29,42 +29,6 @@ class ProductOptionModifier extends Model
 
     public function getActualQuantity(float $baseQuantity): float
     {
-        return $baseQuantity + $this->deltaQuantity;
+        return $baseQuantity + $this->delta_quantity;
     }
-
-    /**
-     * Tính giá cuối cùng khi chọn option
-     */
-    public function calculateFinalPrice(float $basePrice, array $selectedOptionGroupIds): float
-    {
-        $additionalPrice = $this->optionGroups()
-            ->whereIn('option_group_id', $selectedOptionGroupIds)
-            ->sum('additional_price');
-
-        return $basePrice + $additionalPrice;
-    }
-
-    public function calculateRequiredIngredients(array $selectedOptions): array
-    {
-        $ingredients = [];
-
-        foreach ($this->recipeDetails as $detail) {
-            $baseAmount = $detail->amount;
-            $modifier = $this->optionModifiers()
-                ->where('ingredient_id', $detail->ingredient_id)
-                ->first();
-
-            $finalAmount = $modifier
-                ? $baseAmount + $modifier->deltaQuantity
-                : $baseAmount;
-
-            $ingredients[$detail->ingredient_id] = [
-                'ingredient' => $detail->ingredient,
-                'amount' => $finalAmount
-            ];
-        }
-
-        return $ingredients;
-    }
-
 }

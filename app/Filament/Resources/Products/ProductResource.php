@@ -24,7 +24,7 @@ class ProductResource extends Resource
 
     protected static ?string $modelLabel = 'Sản phẩm';
 
-     protected static ?string $pluralModelLabel = 'Sản phẩm';
+    protected static ?string $pluralModelLabel = 'Sản phẩm';
 
     protected static string|null|\UnitEnum $navigationGroup = 'Sản phẩm';
 
@@ -40,19 +40,26 @@ class ProductResource extends Resource
         return ProductsTable::configure($table);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['images', 'category', 'recipeDetails.ingredient'])
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
+
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => ListProducts::route('/'),
+            'index'  => ListProducts::route('/'),
             'create' => CreateProduct::route('/create'),
-            'edit' => EditProduct::route('/{record}/edit'),
+            'edit'   => EditProduct::route('/{record}/edit'),
         ];
     }
 
