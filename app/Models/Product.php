@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * @method static \Illuminate\Database\Eloquent\Builder active()
+ */
 class Product extends Model
 {
     use SoftDeletes, HasFactory;

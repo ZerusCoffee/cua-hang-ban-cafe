@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductDTO;
+use App\Http\Resources\ProductListDTO;
 use App\Models\Product;
 
 class ProductController extends Controller
@@ -16,7 +17,7 @@ class ProductController extends Controller
             $products = Product::active()->paginate(10);
 
             return $this->successResponse(  
-                ProductDTO::collection($products),
+                ProductListDTO::collection($products),
                 "Lấy danh sách sản phẩm thành công"
             );
 
@@ -36,7 +37,7 @@ class ProductController extends Controller
                 ->paginate(10);
 
             return $this->successResponse(
-                ProductDTO::collection($products),
+                ProductListDTO::collection($products),
                 "Lấy danh sách sản phẩm thành công"
             );
 
@@ -68,11 +69,32 @@ class ProductController extends Controller
     }
 
     public function getByCategory($categoryId) {
-        $products = Product::where('category_id', $categoryId)->get();
+        $products = Product::active()
+        ->where('category_id', $categoryId)
+        ->get();
 
         return $this->successResponse(  
-            ProductDTO::collection($products),
+            ProductListDTO::collection($products),
             "Lấy danh sách sản phẩm theo Category thành công"
         );
+    }
+
+    public function getNewest(){
+        try {
+            $products = Product::active()
+                ->latest()
+                ->paginate(10);
+
+            return $this->successResponse(
+                ProductListDTO::collection($products),
+                "Lấy danh sách sản phẩm mới nhất thành công"
+            );
+
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                "Có lỗi xảy ra khi lấy danh sách sản phẩm: " . $e->getMessage(),
+                500
+            );
+        }
     }
 }
