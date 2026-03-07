@@ -16,8 +16,6 @@ return new class extends Migration {
             $table->foreignId('option_id')->constrained('options')->onDelete('cascade');
             $table->decimal('additional_price', 10, 2); //size L + 4000d
             $table->timestamps();
-
-            $table->unique(['product_id', 'option_id']);
         });
     }
 
