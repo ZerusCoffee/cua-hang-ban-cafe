@@ -15,7 +15,7 @@ class ProductController extends Controller
         try {
             $products = Product::active()->paginate(10);
 
-            return $this->successResponse(
+            return $this->successResponse(  
                 ProductDTO::collection($products),
                 "Lấy danh sách sản phẩm thành công"
             );
@@ -65,5 +65,14 @@ class ProductController extends Controller
                 500
             );
         }
+    }
+
+    public function getByCategory($categoryId) {
+        $products = Product::where('category_id', $categoryId)->get();
+
+        return $this->successResponse(  
+            ProductDTO::collection($products),
+            "Lấy danh sách sản phẩm theo Category thành công"
+        );
     }
 }
