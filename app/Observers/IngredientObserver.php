@@ -2,10 +2,14 @@
 
 namespace App\Observers;
 
+use App\Jobs\RecalculateProductPrices;
 use App\Models\Ingredient;
 
 class IngredientObserver
 {
+
+    public $afterCommit = true;
+
     /**
      * Handle the Ingredient "created" event.
      */
@@ -19,30 +23,12 @@ class IngredientObserver
      */
     public function updated(Ingredient $ingredient): void
     {
-        //
+        if ($ingredient->wasChanged('cost_price')) {
+            // Sử dụng queue để xử lý bất đồng bộ
+            $oldCostPrice = $ingredient->getOriginal('cost_price');
+            RecalculateProductPrices::dispatch($ingredient, $oldCostPrice);
+        }
     }
 
-    /**
-     * Handle the Ingredient "deleted" event.
-     */
-    public function deleted(Ingredient $ingredient): void
-    {
-        //
-    }
 
-    /**
-     * Handle the Ingredient "restored" event.
-     */
-    public function restored(Ingredient $ingredient): void
-    {
-        //
-    }
-
-    /**
-     * Handle the Ingredient "force deleted" event.
-     */
-    public function forceDeleted(Ingredient $ingredient): void
-    {
-        //
-    }
 }

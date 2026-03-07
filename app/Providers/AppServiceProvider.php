@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\ImportOrderDetail;
+use App\Models\Ingredient;
+use App\Observers\ImportOrderDetailObserver;
+use App\Observers\IngredientObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Ingredient::observe(IngredientObserver::class);
+        ImportOrderDetail::observe(ImportOrderDetailObserver::class);
     }
 }
