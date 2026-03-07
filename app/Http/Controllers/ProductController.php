@@ -78,4 +78,23 @@ class ProductController extends Controller
             "Lấy danh sách sản phẩm theo Category thành công"
         );
     }
+
+    public function getNewest(){
+        try {
+            $products = Product::active()
+                ->latest()
+                ->paginate(10);
+
+            return $this->successResponse(
+                ProductListDTO::collection($products),
+                "Lấy danh sách sản phẩm mới nhất thành công"
+            );
+
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                "Có lỗi xảy ra khi lấy danh sách sản phẩm: " . $e->getMessage(),
+                500
+            );
+        }
+    }
 }
