@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductOption extends Model
 {
@@ -29,14 +30,18 @@ class ProductOption extends Model
         return $this->belongsTo(Option::class, 'option_id');
     }
 
-     // Helper để lấy giá trị option
-    public function getOptionValueAttribute()
+    // Modifiers lồng trong product_option này
+    public function modifiers(): HasMany
+    {
+        return $this->hasMany(ProductOptionModifier::class, 'product_option_id');
+    }
+
+    public function getOptionValueAttribute(): ?string
     {
         return $this->option?->value;
     }
 
-    // Helper để lấy tên nhóm
-    public function getGroupNameAttribute()
+    public function getGroupNameAttribute(): ?string
     {
         return $this->option?->group?->name;
     }

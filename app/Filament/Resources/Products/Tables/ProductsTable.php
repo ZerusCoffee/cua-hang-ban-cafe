@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class ProductsTable
 {
-     public static function configure(Table $table): Table
+    public static function configure(Table $table): Table
     {
         return $table
             ->columns([
@@ -25,7 +25,7 @@ class ProductsTable
                     ->disk('public')
                     ->circular()
                     ->defaultImageUrl(asset('images/placeholder.png'))
-                    ->getStateUsing(fn ($record) => $record->images->first()?->image_path),
+                    ->getStateUsing(fn($record) => $record->images->first()?->image_path),
 
                 TextColumn::make('name')
                     ->label('Tên sản phẩm')
@@ -46,11 +46,9 @@ class ProductsTable
                     ->label('Giá cost')
                     ->getStateUsing(function ($record) {
                         $total = 0;
-                        if ($record->recipe && $record->recipe->recipeDetails) {
-                            foreach ($record->recipe->recipeDetails as $detail) {
-                                if ($detail->ingredient) {
-                                    $total += floatval($detail->ingredient->cost_price) * floatval($detail->amount);
-                                }
+                        foreach ($record->recipeDetails as $detail) {
+                            if ($detail->ingredient) {
+                                $total += floatval($detail->ingredient->cost_price) * floatval($detail->amount);
                             }
                         }
                         return round($total, 2);
@@ -68,7 +66,7 @@ class ProductsTable
                     ->description('Tỷ lệ so với cost', 'above'),
 
                 TextColumn::make('recommended_price')
-                    ->label('Giá đề xuất (từ DB)')
+                    ->label('Giá đề xuất')
                     ->numeric(decimalPlaces: 0)
                     ->suffix('đ')
                     ->color('success')
@@ -76,11 +74,9 @@ class ProductsTable
                     ->sortable()
                     ->description(function ($record) {
                         $totalCost = 0;
-                        if ($record->recipe && $record->recipe->recipeDetails) {
-                            foreach ($record->recipe->recipeDetails as $detail) {
-                                if ($detail->ingredient) {
-                                    $totalCost += floatval($detail->ingredient->cost_price) * floatval($detail->amount);
-                                }
+                        foreach ($record->recipeDetails as $detail) {
+                            if ($detail->ingredient) {
+                                $totalCost += floatval($detail->ingredient->cost_price) * floatval($detail->amount);
                             }
                         }
 

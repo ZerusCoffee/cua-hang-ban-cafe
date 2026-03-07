@@ -25,8 +25,8 @@ class Product extends Model
         'name',
         'slug',
         'sku',
-        'recommended_price', // Giá bán đề xuất
-        'profit_rate', // tỉ lệ lợi nhuận
+        'recommended_price',
+        'profit_rate',
         'short_description',
         'description',
         'is_featured',
@@ -41,10 +41,10 @@ class Product extends Model
 
     protected $casts = [
         'recommended_price' => 'decimal:2',
-        'profit_rate' => 'decimal:2',
-        'is_active' => 'boolean',
-        'is_featured' => 'boolean',
-        'view_count' => 'integer',
+        'profit_rate'       => 'decimal:2',
+        'is_active'         => 'boolean',
+        'is_featured'       => 'boolean',
+        'view_count'        => 'integer',
     ];
 
     #[Scope]
@@ -64,11 +64,6 @@ class Product extends Model
         return $this->hasMany(RecipeDetail::class);
     }
 
-
-    /**
-     * Tính giá cost từ recipe:
-     * Σ (amount × unit_price của nguyên liệu trong lô nhập gần nhất)
-     */
     public function getCostPriceAttribute(): float
     {
         $recipeDetails = $this->recipeDetails()->with('ingredient')->get();
@@ -94,9 +89,8 @@ class Product extends Model
             if (empty($product->slug)) {
                 $product->slug = Str::slug($product->name);
             }
-
             if (empty($product->sku)) {
-                $product->sku = 'SP-TMP-' . time();  // tạm
+                $product->sku = 'SP-TMP-' . time();
             }
         });
 
@@ -116,6 +110,8 @@ class Product extends Model
 
         static::deleting(function (Product $product) {
             $product->recipeDetails()->delete();
+            $product->productOptions()->each(fn($po) => $po->modifiers()->delete());
+            $product->productOptions()->delete();
         });
     }
 
@@ -146,48 +142,30 @@ class Product extends Model
             ->withTimestamps();
     }
 
-    public function optionModifiers(): HasMany
-    {
-        return $this->hasMany(ProductOptionModifier::class);
-    }
-
-    /**
-     * Lấy giá của 1 option cụ thể
-     */
     public function getOptionPrice(int $optionId): float
     {
-        $productOption = $this->productOptions()
+        return $this->productOptions()
             ->where('option_id', $optionId)
-            ->first();
-
-        return $productOption?->additional_price ?? 0;
+            ->value('additional_price') ?? 0;
     }
 
-    /**
-     * Lấy tất cả option theo nhóm
-     */
     public function getOptionsByGroup(): array
     {
         $result = [];
-
         foreach ($this->productOptions as $productOption) {
             $groupName = $productOption->option->group->name;
-            $optionValue = $productOption->option->value;
-
             if (!isset($result[$groupName])) {
                 $result[$groupName] = [
-                    'group' => $productOption->option->group,
-                    'options' => []
+                    'group'   => $productOption->option->group,
+                    'options' => [],
                 ];
             }
-
             $result[$groupName]['options'][] = [
-                'id' => $productOption->option_id,
-                'value' => $optionValue,
-                'price' => $productOption->additional_price
+                'id'    => $productOption->option_id,
+                'value' => $productOption->option->value,
+                'price' => $productOption->additional_price,
             ];
         }
-
         return $result;
     }
 }
