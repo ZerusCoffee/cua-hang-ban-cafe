@@ -18,21 +18,34 @@ class ProductSeeder extends Seeder
 
         $beverageCategory = Category::firstOrCreate(
             ['name' => 'Đồ Uống'],
-            ['slug' => 'do-uong']
+            ['slug' => 'do-uong']   
         );
+
+        $snackCategory = Category::firstOrCreate(
+            ['name' => 'Snack'],
+            ['slug' => 'snack']   
+        );
+
         // Create coffee products
         Product::factory()
-            ->count(5)
+            ->count(10)
             ->coffee()
             ->create([
                 'category_id' => $coffeeCategory->id,
             ]);
         // Create beverage products
         Product::factory()
-            ->count(5)
+            ->count(10)
             ->beverage()
             ->create([
                 'category_id' => $beverageCategory->id,
+            ]);
+
+        Product::factory()
+            ->count(10)
+            ->snack()
+            ->create([
+                'category_id' => $snackCategory->id,
             ]);
     }
 }
