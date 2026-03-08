@@ -92,29 +92,65 @@ class ProductFactory extends Factory
      * State for beverage products
      */
     public function beverage(): static
-{
-    return $this->state(function () {
+    {
+        return $this->state(function () {
 
-        $name = $this->faker->unique()->randomElement([
-            'Trà sữa nóng',
-            'Trà sữa đá',
-            'Nước chanh nóng',
-            'Nước chanh đá',
-            'Nước cam nóng',
-            'Nước cam đá',
-            'Sinh tố xoài',
-            'Sinh tố bơ',
-            'Nước dừa',
-            'Smoothie dâu',
-            'Smoothie việt quất',
-        ]);
+            $name = $this->faker->unique()->randomElement([
+                'Trà sữa nóng',
+                'Trà sữa đá',
+                'Nước chanh nóng',
+                'Nước chanh đá',
+                'Nước cam nóng',
+                'Nước cam đá',
+                'Sinh tố xoài',
+                'Sinh tố bơ',
+                'Nước dừa',
+                'Smoothie dâu',
+                'Smoothie việt quất',
+            ]);
 
-        return [
-            'name' => $name,
-            'short_description' => 'Đồ uống tươi mát',
-            'recommended_price' => $this->faker->numberBetween(15000, 50000),
-            'profit_rate' => $this->faker->numberBetween(35, 75),
-        ];
-    });
-}
+            return [
+                'name' => $name,
+                'short_description' => 'Đồ uống tươi mát',
+                'recommended_price' => $this->faker->numberBetween(15000, 50000),
+                'profit_rate' => $this->faker->numberBetween(35, 75),
+            ];
+        });
+    }
+
+    public function snack(): static
+    {
+        return $this->state(function () {
+
+            $name = $this->faker->unique()->randomElement([
+                'Khoai tây lắc phô mai',
+                'Khoai tây lắc sữa',
+                'Bánh tráng trộn',
+                'Bánh tráng muối',
+                'Bánh tráng me',
+                'Bánh tráng sa tế',
+                'Bò khô',
+                'Khô gà lá chanh',
+                'Khô bò',
+                'Hạt dẻ cười rang muối',
+                'Hạt điều rang muối',
+                'Hạnh nhân nướng mật ong',
+                'Bánh quy bơ',
+                'Bánh quy socola',
+                'Bánh quế',
+                'Snack rong biển',
+                'Snack ngô',
+                'Bim bim khoai tây',
+                'Mực khô',
+                'Chà bông',
+            ]);
+
+            return [
+                'name' => $name,
+                'short_description' => 'Đồ ăn vặt giòn ngon',
+                'recommended_price' => $this->faker->numberBetween(10000, 35000),
+                'profit_rate' => $this->faker->numberBetween(40, 70),
+            ];
+        });
+    }
 }

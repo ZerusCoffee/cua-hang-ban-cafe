@@ -7,4 +7,3 @@ Route::get('/', [ProductController::class, 'index']);
 Route::get('/featured', [ProductController::class, 'getAllFeatured']);
 Route::get('/newest', [ProductController::class, 'getNewest']);
 Route::get('/{product}', [ProductController::class, 'show']);
-Route::get('/category/{categoryId}', [ProductController::class, 'getByCategory']);
