@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Notifications\ResetPasswordRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -161,7 +162,8 @@ class CustomerAuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return $this->successResponse(null, "Đã đăng xuất thành công");
+        return $this->successResponse(null, "Đã đăng xuất thành công")
+                ->cookie(Cookie::forget('cart_token'));
     }
 
     public function sendMailForgotPassword(Request $request)

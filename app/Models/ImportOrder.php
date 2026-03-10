@@ -53,7 +53,7 @@ class ImportOrder extends Model
 
     public function getTotalAmountAttribute(): float
     {
-        return $this->details->sum(fn ($d) => $d->quantity * $d->unit_price);
+        return $this->details->sum(fn($d) => $d->quantity * $d->unit_price);
     }
 
     public function complete(): void
@@ -65,6 +65,7 @@ class ImportOrder extends Model
         DB::transaction(function () {
 
             $this->loadMissing('details.ingredient');
+            $importAt = now();
 
             foreach ($this->details as $detail) {
 
@@ -94,13 +95,26 @@ class ImportOrder extends Model
                     'stock' => $currentStock + $newQuantity,
                     'cost_price' => $averageCost,
                 ]);
+
+                // Ghi log nhập kho + biến động giá
+                IngredientImportLog::create([
+                    'ingredient_id' => $ingredient->id,
+                    'import_order_id' => $this->id,
+                    'import_order_code' => $this->code,
+                    'quantity' => $newQuantity,
+                    'stock_before' => $currentStock,
+                    'stock_after' => $currentStock + $newQuantity,
+                    'unit_price' => $newCost,
+                    'cost_price_before' => $currentCost,
+                    'cost_price_after' => $averageCost,
+                    'imported_at' => $importAt,
+                ]);
             }
 
             $this->update([
                 'status' => 'completed',
-                'imported_at' => now(),
+                'imported_at' => $importAt,
             ]);
         });
     }
-
 }

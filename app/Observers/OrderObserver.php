@@ -76,7 +76,7 @@ class OrderObserver
                 if ($totalDeduct <= 0) continue;
 
                 Ingredient::where('id', $ingredientId)
-                    ->decrement('stock_quantity', $totalDeduct);
+                    ->decrement('stock', $totalDeduct);
             }
         }
 
@@ -119,9 +119,6 @@ class OrderObserver
                 'cost_breakdown'   => $item->getCostBreakdown(),
                 'logged_at'        => now(),
             ]);
-
-            // Cập nhật unit_cost vào order_item để tiện tra cứu
-            $item->updateQuietly(['unit_cost' => $unitCost]);
         }
 
         Log::info("OrderObserver: Đã tạo profit log cho đơn #{$order->order_number}");
