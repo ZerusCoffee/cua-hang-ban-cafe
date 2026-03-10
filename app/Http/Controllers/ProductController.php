@@ -32,12 +32,12 @@ class ProductController extends Controller
     // price range
     $query->when(
         $request->filled('min_price'),
-        fn ($q) => $q->where('price', '>=', $request->min_price)
+        fn ($q) => $q->where('recommended_price', '>=', $request->min_price)
     );
 
     $query->when(
         $request->filled('max_price'),
-        fn ($q) => $q->where('price', '<=', $request->max_price)
+        fn ($q) => $q->where('recommended_price', '<=', $request->max_price)
     );
 
     //limit, max = 50
@@ -122,4 +122,21 @@ class ProductController extends Controller
             );
         }
     }
+
+    public function getMaxPrice()
+{
+    try {
+        $maxPrice = Product::active()->max('recommended_price');
+
+        return $this->successResponse(
+            $maxPrice,
+            "Lấy giá cao nhất thành công"
+        );
+    } catch (\Exception $e) {
+        return $this->errorResponse(
+            "Có lỗi xảy ra: " . $e->getMessage(),
+            500
+        );
+    }
+}
 }
