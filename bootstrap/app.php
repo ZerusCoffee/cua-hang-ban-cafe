@@ -8,7 +8,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Validation\ValidationException;
 use App\Http\Middleware\GetTokenFromCookie;
-use App\Http\Middleware\CheckUserLocked;
+use App\Http\Middleware\CheckCustomerLocked;
+use App\Http\Middleware\EnsureCartAccess;
 
 
 
@@ -22,8 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('api', [
             GetTokenFromCookie::class,
-            CheckUserLocked::class,
-            CartTokenMiddleware::class,
+            CheckCustomerLocked::class,
         ]);
 
         $middleware->encryptCookies(except: [
