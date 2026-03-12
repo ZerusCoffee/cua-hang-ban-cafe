@@ -168,4 +168,9 @@ class Product extends Model
         }
         return $result;
     }
+
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
 }

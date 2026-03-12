@@ -20,7 +20,9 @@ class ProductListDTO extends JsonResource
             'price' => $this->recommended_price,
             'shortDescription' => $this->short_description,
             'viewCount' => $this->view_count,
-            'primaryImage' => new ProductImageDTO($this->whenLoaded('primaryImage')),
+            'primaryImage' => $this->primaryImage
+                ? asset('storage/' . $this->primaryImage->image_path)
+                : null,
         ];
     }
 }
