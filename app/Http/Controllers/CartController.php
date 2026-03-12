@@ -1,39 +1,30 @@
 <?php
+// app/Http/Controllers/CartController.php
 
 namespace App\Http\Controllers;
 
 use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
     public function __construct(private CartService $cartService) {}
 
-    private function resolveToken(Request $request): string
-    {
-        return $request->header('X-Cart-Token') ?? Str::uuid()->toString();
-    }
-
     /**
-     * GET /api/v1/cart
+     * Lấy giỏ hàng hiện tại
      */
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
-        $token = $this->resolveToken($request);
-        $summary = $this->cartService->summary($token);
+        $userId = Auth::id();
+        $summary = $this->cartService->summary($userId);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Lấy giỏ hàng thành công',
-            'data'    => $summary,
-        ])->header('X-Cart-Token', $token);
+        return $this->successResponse($summary, 'Lấy giỏ hàng thành công');
     }
 
     /**
-     * POST /api/v1/cart/items
-     * Body: { product_id, quantity, options[] }
+     * Thêm sản phẩm vào giỏ hàng
      */
     public function addItem(Request $request): JsonResponse
     {
@@ -48,68 +39,57 @@ class CartController extends Controller
             'options.*.additional_price'  => 'required|numeric|min:0',
         ]);
 
-        $token = $this->resolveToken($request);
-        $item  = $this->cartService->addItem(
-            $token,
-            $data['product_id'],
-            $data['quantity'],
-            $data['options'] ?? []
-        );
+        $userId = Auth::id();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Đã thêm vào giỏ hàng',
-            'data'    => $item,
-        ])->header('X-Cart-Token', $token);
+        $item        = $this->cartService->addItem($userId, $data['product_id'], $data['quantity'], $data['options'] ?? []);
+        $stockErrors = $this->cartService->checkStock($userId);
+
+        return $this->successResponse([
+            'item'     => $item,
+            'warnings' => $stockErrors ?: null,
+        ], 'Đã thêm vào giỏ hàng');
     }
 
     /**
-     * PATCH /api/v1/cart/items/{itemKey}
-     * Body: { quantity }
+     * Cập nhật số lượng sản phẩm
      */
     public function updateItem(Request $request, string $itemKey): JsonResponse
     {
         $data = $request->validate([
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|integer|min:0'
         ]);
 
-        $token  = $this->resolveToken($request);
-        $result = $this->cartService->updateItem($token, $itemKey, $data['quantity']);
+        $userId = Auth::id();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Đã cập nhật giỏ hàng',
-            'data'    => $result,
-        ])->header('X-Cart-Token', $token);
+        $result      = $this->cartService->updateItem($userId, $itemKey, $data['quantity']);
+        $stockErrors = $this->cartService->checkStock($userId);
+        $message     = $data['quantity'] > 0 ? 'Đã cập nhật' : 'Đã xóa';
+
+        return $this->successResponse([
+            'item'     => $result,
+            'warnings' => $stockErrors ?: null,
+        ], $message);
     }
 
     /**
-     * DELETE /api/v1/cart/items/{itemKey}
+     * Xóa sản phẩm khỏi giỏ hàng
      */
-    public function removeItem(Request $request, string $itemKey): JsonResponse
+    public function removeItem(string $itemKey): JsonResponse
     {
-        $token = $this->resolveToken($request);
-        $cart  = $this->cartService->removeItem($token, $itemKey);
+        $userId = Auth::id();
+        $cart = $this->cartService->removeItem($userId, $itemKey);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Đã xóa sản phẩm khỏi giỏ hàng',
-            'data'    => $cart,
-        ])->header('X-Cart-Token', $token);
+        return $this->successResponse($cart, 'Đã xóa sản phẩm');
     }
 
     /**
-     * DELETE /api/v1/cart
+     * Xóa toàn bộ giỏ hàng
      */
-    public function clear(Request $request): JsonResponse
+    public function clear(): JsonResponse
     {
-        $token = $this->resolveToken($request);
-        $this->cartService->clear($token);
+        $userId = Auth::id();
+        $this->cartService->clear($userId);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Đã xóa giỏ hàng',
-            'data'    => null,
-        ])->header('X-Cart-Token', $token);
+        return $this->successResponse(null, 'Đã xóa giỏ hàng');
     }
 }

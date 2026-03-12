@@ -9,45 +9,65 @@ use Illuminate\Support\Facades\Redis;
 
 class CartService
 {
-    private string $prefix = 'cart:';
-    private int $ttl = 60 * 60 * 24 * 7; // 7 ngày
+    private string $prefix = 'cart:user:';
+    private int    $ttl    = 60 * 60 * 24 * 7; // 7 ngày
 
-    private function key(string $cartToken): string
+    // ─── Redis helpers ────────────────────────────────────────────────────────
+
+    private function key(int $userId): string
     {
-        return $this->prefix . $cartToken;
+        return $this->prefix . $userId;
     }
 
-    /**
-     * Lấy toàn bộ giỏ hàng
-     */
-    public function get(string $cartToken): array
+    private function load(int $userId): array
     {
-        $data = Redis::get($this->key($cartToken));
-        return $data ? json_decode($data, true) : [];
+        $data = Redis::get($this->key($userId));
+
+        if ($data) {
+            Redis::expire($this->key($userId), $this->ttl);
+            return json_decode($data, true);
+        }
+
+        return [];
     }
 
-    /**
-     * Thêm hoặc cập nhật item trong giỏ
-     * $options format: [{ "product_option_id": 5, "option_id": 1, "group_name": "Size", "option_value": "L", "additional_price": 4000 }]
-     */
-    public function addItem(string $cartToken, int $productId, int $quantity, array $options = []): array
+    private function save(int $userId, array $cart): void
     {
-        $product = Product::with('productOptions.option.group')->findOrFail($productId);
+        Redis::setex($this->key($userId), $this->ttl, json_encode($cart));
+    }
 
-        // Tính giá = recommended_price + additional_price của các options
-        $basePrice = floatval($product->recommended_price);
-        $additionalPrice = collect($options)->sum('additional_price');
-        $unitPrice = $basePrice + $additionalPrice;
+    // ─── Cart CRUD ────────────────────────────────────────────────────────────
 
-        $cart = $this->get($cartToken);
+    public function get(int $userId): array
+    {
+        return $this->load($userId);
+    }
 
-        // Tạo key unique cho item dựa trên product + options đã chọn
+    public function summary(int $userId): array
+    {
+        $items = array_values($this->load($userId));
+
+        return [
+            'items'    => $items,
+            'count'    => count($items),
+            'subtotal' => collect($items)->sum(fn($i) => $i['unit_price'] * $i['quantity']),
+        ];
+    }
+
+    public function addItem(int $userId, int $productId, int $quantity, array $options = []): array
+    {
+        $product   = Product::findOrFail($productId);
+        $unitPrice = floatval($product->recommended_price)
+                   + collect($options)->sum('additional_price');
+
+        $cart    = $this->load($userId);
         $itemKey = $this->makeItemKey($productId, $options);
 
         if (isset($cart[$itemKey])) {
             $cart[$itemKey]['quantity'] += $quantity;
         } else {
             $cart[$itemKey] = [
+                'item_key'     => $itemKey,
                 'product_id'   => $productId,
                 'product_name' => $product->name,
                 'product_sku'  => $product->sku,
@@ -58,136 +78,103 @@ class CartService
             ];
         }
 
-        $this->save($cartToken, $cart);
+        $this->save($userId, $cart);
+
         return $cart[$itemKey];
     }
 
-    /**
-     * Cập nhật số lượng item
-     */
-    public function updateItem(string $cartToken, string $itemKey, int $quantity): array
+    public function updateItem(int $userId, string $itemKey, int $quantity): array
     {
-        $cart = $this->get($cartToken);
+        $cart = $this->load($userId);
 
-        if (!isset($cart[$itemKey])) {
-            abort(404, 'Item không tồn tại trong giỏ hàng');
-        }
+        abort_unless(isset($cart[$itemKey]), 404, 'Item không tồn tại trong giỏ hàng');
 
         if ($quantity <= 0) {
-            return $this->removeItem($cartToken, $itemKey);
+            return $this->removeItem($userId, $itemKey);
         }
 
         $cart[$itemKey]['quantity'] = $quantity;
-        $this->save($cartToken, $cart);
+        $this->save($userId, $cart);
+
         return $cart[$itemKey];
     }
 
-    /**
-     * Xóa 1 item khỏi giỏ
-     */
-    public function removeItem(string $cartToken, string $itemKey): array
+    public function removeItem(int $userId, string $itemKey): array
     {
-        $cart = $this->get($cartToken);
+        $cart = $this->load($userId);
         unset($cart[$itemKey]);
-        $this->save($cartToken, $cart);
+        $this->save($userId, $cart);
+
         return $cart;
     }
 
-    /**
-     * Xóa toàn bộ giỏ
-     */
-    public function clear(string $cartToken): void
+    public function clear(int $userId): void
     {
-        Redis::del($this->key($cartToken));
+        Redis::del($this->key($userId));
     }
 
-    /**
-     * Tính tổng giỏ hàng
-     */
-    public function summary(string $cartToken): array
+    // ─── Stock check ──────────────────────────────────────────────────────────
+
+    public function checkStock(int $userId): array
     {
-        $cart = $this->get($cartToken);
-        $items = array_values($cart);
+        $required = $this->aggregateRequired($userId);
 
-        $subtotal = collect($items)->sum(fn($i) => $i['unit_price'] * $i['quantity']);
+        if (empty($required)) return [];
 
-        return [
-            'items'    => $items,
-            'count'    => count($items),
-            'subtotal' => $subtotal,
-        ];
+        $ingredients = Ingredient::whereIn('id', array_keys($required))->get()->keyBy('id');
+
+        return collect($required)
+            ->filter(fn($needed, $id) =>
+                isset($ingredients[$id]) && floatval($ingredients[$id]->stock) < $needed
+            )
+            ->map(fn($needed, $id) => [
+                'ingredient' => $ingredients[$id]->name,
+                'needed'     => $needed,
+                'available'  => floatval($ingredients[$id]->stock),
+            ])
+            ->values()
+            ->toArray();
     }
 
-    /**
-     * Kiểm tra tồn kho nguyên liệu cho toàn bộ giỏ
-     * Trả về danh sách lỗi nếu không đủ
-     */
-    public function checkStock(string $cartToken): array
-    {
-        $cart = $this->get($cartToken);
-        $errors = [];
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
-        // Gom tổng nguyên liệu cần dùng cho toàn bộ giỏ
-        $required = []; // [ingredient_id => total_amount]
+    public function makeItemKey(int $productId, array $options): string
+    {
+        $ids = collect($options)->pluck('product_option_id')->sort()->values()->toArray();
+
+        return 'item_' . $productId . '_' . md5(json_encode($ids));
+    }
+
+    private function aggregateRequired(int $userId): array
+    {
+        $cart     = $this->load($userId);
+        $required = [];
 
         foreach ($cart as $item) {
-            $product = Product::with('recipeDetails.ingredient')->find($item['product_id']);
+            $product = Product::with('recipeDetails')->find($item['product_id']);
             if (!$product) continue;
 
-            // Base ingredients từ công thức
-            $ingredientAmounts = [];
-            foreach ($product->recipeDetails as $detail) {
-                $ingredientAmounts[$detail->ingredient_id] =
-                    ($ingredientAmounts[$detail->ingredient_id] ?? 0) + floatval($detail->amount);
+            $amounts = collect($product->recipeDetails)
+                ->mapWithKeys(fn($d) => [$d->ingredient_id => floatval($d->amount)])
+                ->toArray();
+
+            $optionIds = collect($item['options'] ?? [])->pluck('product_option_id')->filter()->toArray();
+            if (!empty($optionIds)) {
+                ProductOptionModifier::whereIn('product_option_id', $optionIds)
+                    ->get()
+                    ->each(function ($mod) use (&$amounts) {
+                        $amounts[$mod->ingredient_id] = max(
+                            0,
+                            ($amounts[$mod->ingredient_id] ?? 0) + floatval($mod->delta_quantity)
+                        );
+                    });
             }
 
-            // Áp dụng delta từ options
-            $productOptionIds = collect($item['options'] ?? [])->pluck('product_option_id')->filter()->toArray();
-            if (!empty($productOptionIds)) {
-                $modifiers = ProductOptionModifier::whereIn('product_option_id', $productOptionIds)->get();
-                foreach ($modifiers as $modifier) {
-                    $id = $modifier->ingredient_id;
-                    $ingredientAmounts[$id] = ($ingredientAmounts[$id] ?? 0) + floatval($modifier->delta_quantity);
-                    $ingredientAmounts[$id] = max(0, $ingredientAmounts[$id]);
-                }
-            }
-
-            // Nhân với quantity
-            foreach ($ingredientAmounts as $ingredientId => $amountPerUnit) {
+            foreach ($amounts as $ingredientId => $amountPerUnit) {
                 $required[$ingredientId] = ($required[$ingredientId] ?? 0) + ($amountPerUnit * $item['quantity']);
             }
         }
 
-        // So sánh với tồn kho thực tế
-        if (!empty($required)) {
-            $ingredients = Ingredient::whereIn('id', array_keys($required))->get()->keyBy('id');
-            foreach ($required as $ingredientId => $totalNeeded) {
-                $ingredient = $ingredients->get($ingredientId);
-                if (!$ingredient) continue;
-                if (floatval($ingredient->stock_quantity) < $totalNeeded) {
-                    $errors[] = [
-                        'ingredient' => $ingredient->name,
-                        'needed'     => $totalNeeded,
-                        'available'  => floatval($ingredient->stock_quantity),
-                    ];
-                }
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
-     * Tạo unique key cho item dựa trên product_id + options đã chọn
-     */
-    public function makeItemKey(int $productId, array $options): string
-    {
-        $optionIds = collect($options)->pluck('product_option_id')->sort()->values()->toArray();
-        return 'item_' . $productId . '_' . md5(json_encode($optionIds));
-    }
-
-    private function save(string $cartToken, array $cart): void
-    {
-        Redis::setex($this->key($cartToken), $this->ttl, json_encode($cart));
+        return $required;
     }
 }

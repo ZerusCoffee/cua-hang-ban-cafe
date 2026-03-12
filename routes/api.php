@@ -20,5 +20,5 @@ Route::prefix("v1")->group(function () {
 
     Route::prefix("order")->group(base_path('routes/api/order.php'));
 
-
+    Route::prefix('checkout')->group(base_path('routes/api/checkout.php'));
 });
