@@ -6,14 +6,19 @@ use App\Http\Resources\ProductCollectionDTO;
 use App\Http\Resources\ProductDTO;
 use App\Http\Resources\ProductListDTO;
 use App\Models\Product;
+use App\Services\ProductService;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+
+    public function __construct(private ProductService $productService) {}
+
+
     /**
      * List products
      */
-   public function index(Request $request)
+    public function index(Request $request)
 {
     $query = Product::query();
 
@@ -124,19 +129,31 @@ class ProductController extends Controller
     }
 
     public function getMaxPrice()
-{
-    try {
-        $maxPrice = Product::active()->max('recommended_price');
+    {
+        try {
+            $maxPrice = Product::active()->max('recommended_price');
+
+            return $this->successResponse(
+                $maxPrice,
+                "Lấy giá cao nhất thành công"
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                "Có lỗi xảy ra: " . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    public function getOptions(Product $product){
+        // Lấy các options từ product.id
+        
+        $options = $this->productService->getProductOptions($product->id);
+
 
         return $this->successResponse(
-            $maxPrice,
-            "Lấy giá cao nhất thành công"
-        );
-    } catch (\Exception $e) {
-        return $this->errorResponse(
-            "Có lỗi xảy ra: " . $e->getMessage(),
-            500
+            $options,
+            "Lấy các option thành công",
         );
     }
-}
 }

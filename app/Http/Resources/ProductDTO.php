@@ -24,8 +24,12 @@ class ProductDTO extends JsonResource
             'isActive' => $this->is_active,
             'viewCount' => $this->view_count,
             'primaryImage' => new ProductImageDTO($this->whenLoaded('primaryImage')),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'images' => $this->images
+                ->sortByDesc('is_primary')
+                ->values()
+                ->map(fn ($img) => asset('storage/' . $img->image_path)),
+                        'created_at' => $this->created_at,
+                        'updated_at' => $this->updated_at,
         ];
     }
 }
