@@ -15,23 +15,25 @@ use Illuminate\Http\Request;
 class CheckoutController extends Controller
 {
     public function __construct(
-        private CartService    $cartService,
-        private OrderService   $orderService,
-    ) {}
+        private CartService  $cartService,
+        private OrderService $orderService,
+    )
+    {
+    }
 
     /**
-     * POST /api/v1/order/checkout
+     * POST /api/v1/checkout
      */
     public function checkout(CheckoutRequest $request): JsonResponse
     {
-        $token = $request->attributes->get('cart_token');
-        $cart  = $this->cartService->get($token);
+        $userId = $request->user()->id;
+        $cart = $this->cartService->get($userId);
 
         if (empty($cart)) {
             return $this->errorResponse('Giỏ hàng trống', 422);
         }
 
-        $stockErrors = $this->cartService->checkStock($token);
+        $stockErrors = $this->cartService->checkStock($userId);
         if (!empty($stockErrors)) {
             return $this->errorResponse('Không đủ nguyên liệu', 422, [
                 'stock_errors' => $stockErrors,
@@ -41,7 +43,7 @@ class CheckoutController extends Controller
         // Tạo order với status pending
         $order = $this->orderService->createFromCart(
             cart: $cart,
-            customerId: $request->user()->id,
+            customerId: $userId,
             data: $request->validated(),
         );
 
@@ -51,7 +53,7 @@ class CheckoutController extends Controller
 
         // Chỉ xóa giỏ khi COD (đã xác nhận luôn), các method khác chờ callback
         if ($request->payment_method === 'cod') {
-            $this->cartService->clear($token);
+            $this->cartService->clear($userId);
         }
 
         return $response;
@@ -94,9 +96,9 @@ class CheckoutController extends Controller
     private function resolvePaymentService(string $method): mixed
     {
         return match ($method) {
-            'cod'    => app(CodPaymentService::class),
-            'vnpay'  => app(VnpayPaymentService::class),
-            'momo'   => app(MomoPaymentService::class),
+            'cod' => app(CodPaymentService::class),
+            'vnpay' => app(VnpayPaymentService::class),
+            'momo' => app(MomoPaymentService::class),
             'paypal' => app(PaypalPaymentService::class),
         };
     }

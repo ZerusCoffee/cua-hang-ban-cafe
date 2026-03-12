@@ -46,7 +46,6 @@ class VnpayPaymentService implements PaymentServiceInterface
 
     public function callback(Request $request): JsonResponse
     {
-        // TODO: Verify signature + update order status
         $responseCode = $request->input('vnp_ResponseCode');
         $orderNumber  = $request->input('vnp_TxnRef');
         $transId      = $request->input('vnp_TransactionNo');
