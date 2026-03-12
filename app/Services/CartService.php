@@ -9,53 +9,43 @@ use Illuminate\Support\Facades\Redis;
 
 class CartService
 {
-    private string $prefix = 'cart:';
-    private int $ttl = 60 * 60 * 24 * 7; // 7 ngày
+    private string $prefix = 'cart:user:';
+    private int    $ttl    = 60 * 60 * 24 * 7; // 7 ngày
 
     // ─── Redis helpers ────────────────────────────────────────────────────────
 
-    private function key(string $token): string
+    private function key(int $userId): string
     {
-        return $this->prefix . $token;
+        return $this->prefix . $userId;
     }
 
-    private function load(string $token): array
+    private function load(int $userId): array
     {
-        $data = Redis::get($this->key($token));
+        $data = Redis::get($this->key($userId));
 
         if ($data) {
-            Redis::expire($this->key($token), $this->ttl);
+            Redis::expire($this->key($userId), $this->ttl);
             return json_decode($data, true);
         }
 
         return [];
     }
 
-    private function save(string $token, array $cart): void
+    private function save(int $userId, array $cart): void
     {
-        Redis::setex($this->key($token), $this->ttl, json_encode($cart));
+        Redis::setex($this->key($userId), $this->ttl, json_encode($cart));
     }
 
-    // ─── Token ────────────────────────────────────────────────────────────────
+    // ─── Cart CRUD ────────────────────────────────────────────────────────────
 
-    public function exists(string $token): bool
+    public function get(int $userId): array
     {
-        return Redis::exists($this->key($token)) > 0;
+        return $this->load($userId);
     }
 
-    public function init(string $token): void
+    public function summary(int $userId): array
     {
-        $this->save($token, []);
-    }
-
-    public function get(string $token): array
-    {
-        return $this->load($token);
-    }
-
-    public function summary(string $token): array
-    {
-        $items = array_values($this->load($token));
+        $items = array_values($this->load($userId));
 
         return [
             'items'    => $items,
@@ -64,19 +54,20 @@ class CartService
         ];
     }
 
-    public function addItem(string $token, int $productId, int $quantity, array $options = []): array
+    public function addItem(int $userId, int $productId, int $quantity, array $options = []): array
     {
-        $product = Product::findOrFail($productId);
+        $product   = Product::findOrFail($productId);
         $unitPrice = floatval($product->recommended_price)
                    + collect($options)->sum('additional_price');
 
-        $cart    = $this->load($token);
+        $cart    = $this->load($userId);
         $itemKey = $this->makeItemKey($productId, $options);
 
         if (isset($cart[$itemKey])) {
             $cart[$itemKey]['quantity'] += $quantity;
         } else {
             $cart[$itemKey] = [
+                'item_key'     => $itemKey,
                 'product_id'   => $productId,
                 'product_name' => $product->name,
                 'product_sku'  => $product->sku,
@@ -87,44 +78,46 @@ class CartService
             ];
         }
 
-        $this->save($token, $cart);
+        $this->save($userId, $cart);
 
         return $cart[$itemKey];
     }
 
-    public function updateItem(string $token, string $itemKey, int $quantity): array
+    public function updateItem(int $userId, string $itemKey, int $quantity): array
     {
-        $cart = $this->load($token);
+        $cart = $this->load($userId);
 
         abort_unless(isset($cart[$itemKey]), 404, 'Item không tồn tại trong giỏ hàng');
 
         if ($quantity <= 0) {
-            return $this->removeItem($token, $itemKey);
+            return $this->removeItem($userId, $itemKey);
         }
 
         $cart[$itemKey]['quantity'] = $quantity;
-        $this->save($token, $cart);
+        $this->save($userId, $cart);
 
         return $cart[$itemKey];
     }
 
-    public function removeItem(string $token, string $itemKey): array
+    public function removeItem(int $userId, string $itemKey): array
     {
-        $cart = $this->load($token);
+        $cart = $this->load($userId);
         unset($cart[$itemKey]);
-        $this->save($token, $cart);
+        $this->save($userId, $cart);
 
         return $cart;
     }
 
-    public function clear(string $token): void
+    public function clear(int $userId): void
     {
-        Redis::del($this->key($token));
+        Redis::del($this->key($userId));
     }
 
-    public function checkStock(string $token): array
+    // ─── Stock check ──────────────────────────────────────────────────────────
+
+    public function checkStock(int $userId): array
     {
-        $required = $this->aggregateRequired($token);
+        $required = $this->aggregateRequired($userId);
 
         if (empty($required)) return [];
 
@@ -143,6 +136,8 @@ class CartService
             ->toArray();
     }
 
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
     public function makeItemKey(int $productId, array $options): string
     {
         $ids = collect($options)->pluck('product_option_id')->sort()->values()->toArray();
@@ -150,9 +145,9 @@ class CartService
         return 'item_' . $productId . '_' . md5(json_encode($ids));
     }
 
-    private function aggregateRequired(string $token): array
+    private function aggregateRequired(int $userId): array
     {
-        $cart     = $this->load($token);
+        $cart     = $this->load($userId);
         $required = [];
 
         foreach ($cart as $item) {
@@ -163,7 +158,6 @@ class CartService
                 ->mapWithKeys(fn($d) => [$d->ingredient_id => floatval($d->amount)])
                 ->toArray();
 
-            // Áp dụng delta từ options
             $optionIds = collect($item['options'] ?? [])->pluck('product_option_id')->filter()->toArray();
             if (!empty($optionIds)) {
                 ProductOptionModifier::whereIn('product_option_id', $optionIds)

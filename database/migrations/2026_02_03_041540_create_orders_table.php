@@ -31,7 +31,7 @@ return new class extends Migration {
             $table->string('shipping_province'); // thành phố
 
             //Payment & Status
-            $table->enum('payment_method', ['credit_card', 'paypal', 'cash_on_delivery'])->default('cash_on_delivery');
+            $table->enum('payment_method', ['vnpay', 'paypal', 'momo' , 'cash_on_delivery'])->default('cash_on_delivery');
             $table->enum('payment_status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
             $table->enum('status', ['pending', 'confirmed', 'delivered', 'cancelled'])->default('pending');
             $table->string('transaction_id')->nullable(); // Mã giao dịch
