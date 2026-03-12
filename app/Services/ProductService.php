@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Product;
 use App\Models\ProductOption;
 
 class ProductService
@@ -36,4 +37,12 @@ class ProductService
         ->values();
     }
 
+
+    public function getRelatedProducts(Product $product) {
+        return Product::where('category_id', $product->category_id)
+        ->where('id', '!=', $product->id)
+        ->inRandomOrder()
+        ->limit(8)
+        ->get();
+    }
 }

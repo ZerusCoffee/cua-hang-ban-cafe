@@ -9,3 +9,4 @@ Route::get('/newest', [ProductController::class, 'getNewest']);
 Route::get('/max-price', [ProductController::class, 'getMaxPrice']);
 Route::get('/{product}', [ProductController::class, 'show']);
 Route::get('/{product}/options', [ProductController::class, 'getOptions']);
+Route::get('/{product}/related', [ProductController::class, 'getRelated']);

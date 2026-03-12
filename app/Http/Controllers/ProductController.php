@@ -7,6 +7,7 @@ use App\Http\Resources\ProductDTO;
 use App\Http\Resources\ProductListDTO;
 use App\Models\Product;
 use App\Services\ProductService;
+use Google\Service\CloudBuild\Probe;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -154,6 +155,15 @@ class ProductController extends Controller
         return $this->successResponse(
             $options,
             "Lấy các option thành công",
+        );
+    }
+
+    public function getRelated(Product $product){
+        $products = $this->productService->getRelatedProducts($product);
+
+        return $this->successResponse(
+            ProductListDTO::collection($products),
+            "Lấy các sản phẩm liên quan thành công"
         );
     }
 }
