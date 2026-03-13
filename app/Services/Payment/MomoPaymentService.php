@@ -36,7 +36,9 @@ class MomoPaymentService implements PaymentServiceInterface
 
         $signature = hash_hmac('sha256', $rawHash, $this->secretKey);
 
-        $response = Http::post($this->endpoint, [
+        $response = Http::withOptions([
+            'verify' => false, // Tắt SSL verification nếu cần
+        ])->post($this->endpoint, [
             'partnerCode' => $this->partnerCode,
             'requestId'   => $requestId,
             'amount'      => $amount,
