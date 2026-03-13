@@ -28,6 +28,7 @@ class ProductService
                 'options' => $group->map(function ($item) {
                     return [
                         'id' => $item->option->id,
+                        'productOptionId' => $item->id,
                         'value' => $item->option->value,
                         'additionalPrice' => $item->additional_price
                     ];
