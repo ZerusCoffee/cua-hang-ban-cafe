@@ -20,45 +20,62 @@ class ProductController extends Controller
      * List products
      */
     public function index(Request $request)
-{
-    $query = Product::query();
+    {
+        $query = Product::query();
 
-    // filter category
-    $query->when(
-        $request->filled('category_id'),
-        fn ($q) => $q->where('category_id', $request->category_id)
-    );
+        // filter category
+        $query->when(
+            $request->filled('category_id'),
+            fn ($q) => $q->where('category_id', $request->category_id)
+        );
 
-    // search name
-    $query->when(
-        $request->filled('name'),
-        fn ($q) => $q->where('name', 'like', '%' . $request->name . '%')
-    );
+        // search name
+        $query->when(
+            $request->filled('name'),
+            fn ($q) => $q->where('name', 'like', '%' . $request->name . '%')
+        );
 
-    // price range
-    $query->when(
-        $request->filled('min_price'),
-        fn ($q) => $q->where('recommended_price', '>=', $request->min_price)
-    );
+        // price range
+        $query->when(
+            $request->filled('min_price'),
+            fn ($q) => $q->where('recommended_price', '>=', $request->min_price)
+        );
 
-    $query->when(
-        $request->filled('max_price'),
-        fn ($q) => $q->where('recommended_price', '<=', $request->max_price)
-    );
+        $query->when(
+            $request->filled('max_price'),
+            fn ($q) => $q->where('recommended_price', '<=', $request->max_price)
+        );
 
-    //limit, max = 50
-    $limit = (int) $request->get('limit', 8);
-    $limit = min($limit, 50);
+        switch ($request->get('sort_by')) {
+            case 'price-asc':
+                $query->orderBy('recommended_price', 'asc');
+                break;
 
-    $products = $query
-        ->orderBy('id')
-        ->paginate($limit);
+            case 'price-desc':
+                $query->orderBy('recommended_price', 'desc');
+                break;
 
-    return $this->successResponse(
-        new ProductCollectionDTO($products),
-        "Lấy danh sách sản phẩm thành công"
-    );
-}
+            case 'newest':
+                $query->orderBy('created_at', 'desc')
+                    ->orderBy('id', 'desc');
+                break;
+
+            default:
+                $query->orderBy('id');
+                break;
+        }
+
+            // limit
+            $limit = (int) $request->get('limit', 8);
+            $limit = min($limit, 50);
+
+            $products = $query->paginate($limit);
+
+            return $this->successResponse(
+                new ProductCollectionDTO($products),
+                "Lấy danh sách sản phẩm thành công"
+            );
+    }
 
     public function getAllFeatured()
     {
