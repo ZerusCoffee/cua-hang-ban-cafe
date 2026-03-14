@@ -16,7 +16,6 @@ class OrderController extends Controller
     public function index(Request $request): JsonResponse
     {
         $orders = Order::where('customer_id', $request->user()->id)
-            ->with(['items'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 

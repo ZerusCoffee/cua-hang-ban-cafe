@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\CartTokenMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -9,7 +8,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Validation\ValidationException;
 use App\Http\Middleware\GetTokenFromCookie;
 use App\Http\Middleware\CheckCustomerLocked;
-use App\Http\Middleware\EnsureCartAccess;
 
 
 
@@ -61,5 +59,6 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => $e->getMessage(),
                 ], 500);
             }
+            return null; // Để Laravel xử lý lỗi theo cách mặc định (render view lỗi, v.v.)
         });
     })->create();
