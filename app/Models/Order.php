@@ -25,11 +25,11 @@ class Order extends Model
     ];
 
     protected $casts = [
-        'subtotal'        => 'decimal:2',
+        'subtotal' => 'decimal:2',
         'discount_amount' => 'decimal:2',
-        'shipping_fee'    => 'decimal:2',
-        'tax_amount'      => 'decimal:2',
-        'total'           => 'decimal:2',
+        'shipping_fee' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'total' => 'decimal:2',
     ];
 
     #[Scope]
@@ -106,9 +106,13 @@ class Order extends Model
     {
         $this->update(['status' => $newStatus]);
 
+        if ($newStatus === 'delivered' && $this->payment_method === 'cod') {
+            $this->update(['payment_status' => 'paid']);
+        }
+
         $this->statusHistories()->create([
-            'status'  => $newStatus,
-            'notes'   => $note,
+            'status' => $newStatus,
+            'notes' => $note,
             'user_id' => $userId,
         ]);
     }
@@ -126,7 +130,7 @@ class Order extends Model
         static::created(function (Order $order) {
             $order->statusHistories()->create([
                 'status' => $order->status,
-                'notes'  => 'Đơn hàng được tạo',
+                'notes' => 'Đơn hàng được tạo',
             ]);
         });
 

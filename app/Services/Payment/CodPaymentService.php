@@ -3,33 +3,39 @@
 namespace App\Services\Payment;
 
 use App\Models\Order;
+use App\Services\CartService;
 use App\Services\OrderService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
-class CodPaymentService implements PaymentServiceInterface
+class CodPaymentService
 {
-    public function __construct(private OrderService $orderService) {}
+    use ApiResponse;
+
+    public function __construct(
+        private OrderService $orderService,
+        private CartService $cartService
+    ) {}
 
     public function handle(Order $order, array $data): JsonResponse
     {
-        // COD không cần redirect, confirm status luôn
-        $order->updateStatus('confirmed', 'Đơn hàng COD đã được xác nhận');
+        try {
+            $this->cartService->clear($order->customer_id);
+            Log::info('Đã xóa cart COD', [
+                'user_id' => $order->customer_id,
+                'order' => $order->order_number
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi xóa cart COD: ' . $e->getMessage());
+        }
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Đặt hàng thành công',
-            'data'    => [
-                'order_number' => $order->order_number,
-                'total'        => $order->total,
-                'status'       => $order->status,
-            ],
-        ], 201);
-    }
-
-    public function callback(Request $request): JsonResponse
-    {
-        // COD không có callback
-        return response()->json(['status' => 'success']);
+        return $this->successResponse([
+            'order_number' => $order->order_number,
+            'total'        => $order->total,
+            'status'       => $order->status,
+            'payment_status' => $order->payment_status
+        ], 'Đặt hàng COD thành công', 201);
     }
 }
