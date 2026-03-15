@@ -39,9 +39,9 @@ class ViewOrder extends ViewRecord
                 ->visible(fn() => in_array($this->record->status, ['pending', 'confirmed']))
                 ->requiresConfirmation()
                 ->form([
-                    Textarea::make('reason')->label('Lý do huỷ')->required(),
+                    Textarea::make('admin_notes')->label('Lý do huỷ')->required(),
                 ])
-                ->action(fn(array $data) => $this->record->updateStatus('cancelled', $data['reason'], auth()->id())),
+                ->action(fn(array $data) => $this->record->updateStatus('cancelled', $data['admin_notes'], auth()->id())),
         ];
     }
 

@@ -104,11 +104,17 @@ class Order extends Model
 
     public function updateStatus(string $newStatus, ?string $note = null, ?int $userId = null): void
     {
-        $this->update(['status' => $newStatus]);
+        $updateData = ['status' => $newStatus];
+
+        if ($newStatus === 'cancelled' && $note) {
+            $updateData['admin_notes'] = $note;
+        }
 
         if ($newStatus === 'delivered' && $this->payment_method === 'cod') {
-            $this->update(['payment_status' => 'paid']);
+            $updateData['payment_status'] = 'paid';
         }
+
+        $this->update($updateData);
 
         $this->statusHistories()->create([
             'status' => $newStatus,

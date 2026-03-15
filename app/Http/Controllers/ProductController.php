@@ -7,13 +7,14 @@ use App\Http\Resources\ProductDTO;
 use App\Http\Resources\ProductListDTO;
 use App\Models\Product;
 use App\Services\ProductService;
-use Google\Service\CloudBuild\Probe;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
 
-    public function __construct(private ProductService $productService) {}
+    public function __construct(private ProductService $productService)
+    {
+    }
 
 
     /**
@@ -26,24 +27,24 @@ class ProductController extends Controller
         // filter category
         $query->when(
             $request->filled('category_id'),
-            fn ($q) => $q->where('category_id', $request->category_id)
+            fn($q) => $q->where('category_id', $request->category_id)
         );
 
         // search name
         $query->when(
             $request->filled('name'),
-            fn ($q) => $q->where('name', 'like', '%' . $request->name . '%')
+            fn($q) => $q->where('name', 'like', '%' . $request->name . '%')
         );
 
         // price range
         $query->when(
             $request->filled('min_price'),
-            fn ($q) => $q->where('recommended_price', '>=', $request->min_price)
+            fn($q) => $q->where('recommended_price', '>=', $request->min_price)
         );
 
         $query->when(
             $request->filled('max_price'),
-            fn ($q) => $q->where('recommended_price', '<=', $request->max_price)
+            fn($q) => $q->where('recommended_price', '<=', $request->max_price)
         );
 
         switch ($request->get('sort_by')) {
@@ -65,16 +66,18 @@ class ProductController extends Controller
                 break;
         }
 
-            // limit
-            $limit = (int) $request->get('limit', 8);
-            $limit = min($limit, 50);
+        // limit
+        $limit = (int)$request->get('limit', 8);
+        $limit = min($limit, 50);
 
-            $products = $query->paginate($limit);
+        $products = $query->paginate($limit);
 
-            return $this->successResponse(
-                new ProductCollectionDTO($products),
-                "Lấy danh sách sản phẩm thành công"
-            );
+        $this->productService->attachStockStatus($products->getCollection());
+
+        return $this->successResponse(
+            new ProductCollectionDTO($products),
+            "Lấy danh sách sản phẩm thành công"
+        );
     }
 
     public function getAllFeatured()
@@ -83,7 +86,7 @@ class ProductController extends Controller
             $products = Product::active()
                 ->featured()
                 ->paginate(10);
-
+            $this->productService->attachStockStatus($products->getCollection());
             return $this->successResponse(
                 ProductListDTO::collection($products),
                 "Lấy danh sách sản phẩm thành công"
@@ -116,23 +119,27 @@ class ProductController extends Controller
         }
     }
 
-    public function getByCategory($categoryId) {
+    public function getByCategory($categoryId)
+    {
         $products = Product::active()
-        ->where('category_id', $categoryId)
-        ->get();
+            ->where('category_id', $categoryId)
+            ->get();
 
-        return $this->successResponse(  
+        $this->productService->attachStockStatus($products);
+
+        return $this->successResponse(
             ProductListDTO::collection($products),
             "Lấy danh sách sản phẩm theo Category thành công"
         );
     }
 
-    public function getNewest(){
+    public function getNewest()
+    {
         try {
             $products = Product::active()
                 ->latest()
                 ->paginate(10);
-
+            $this->productService->attachStockStatus($products->getCollection());
             return $this->successResponse(
                 ProductListDTO::collection($products),
                 "Lấy danh sách sản phẩm mới nhất thành công"
@@ -163,9 +170,10 @@ class ProductController extends Controller
         }
     }
 
-    public function getOptions(Product $product){
+    public function getOptions(Product $product)
+    {
         // Lấy các options từ product.id
-        
+
         $options = $this->productService->getProductOptions($product->id);
 
 
@@ -175,9 +183,10 @@ class ProductController extends Controller
         );
     }
 
-    public function getRelated(Product $product){
+    public function getRelated(Product $product)
+    {
         $products = $this->productService->getRelatedProducts($product);
-
+        $this->productService->attachStockStatus($products->getCollection());
         return $this->successResponse(
             ProductListDTO::collection($products),
             "Lấy các sản phẩm liên quan thành công"
