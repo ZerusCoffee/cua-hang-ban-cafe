@@ -177,14 +177,14 @@ class OrdersTable
                     )
                     ->requiresConfirmation()
                     ->form([
-                        Textarea::make('reason')
+                        Textarea::make('admin_notes')
                             ->label('Lý do huỷ')
                             ->required(),
                     ])
                     ->action(fn ($record, array $data) =>
                         $record->updateStatus(
                             'cancelled',
-                            $data['reason'],
+                            $data['admin_notes'],
                             auth()->id()
                         )
                     ),

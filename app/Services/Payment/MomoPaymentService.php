@@ -8,6 +8,7 @@ use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class MomoPaymentService implements PaymentServiceInterface
 {
@@ -98,6 +99,7 @@ class MomoPaymentService implements PaymentServiceInterface
 
     public function ipn(Request $request): JsonResponse
     {
+        Log::info('MOMO IPN', $request->all());
         if (!$this->verifySignature($request->all())) {
             return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
         }

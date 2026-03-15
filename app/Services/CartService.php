@@ -49,7 +49,7 @@ class CartService
 
         return [
             'items'    => $items,
-            'count'    => count($items),
+            'total_quantity'    => collect($items)->sum('quantity'),
             'subtotal' => collect($items)->sum(fn($i) => $i['unit_price'] * $i['quantity']),
         ];
     }
@@ -74,7 +74,7 @@ class CartService
                 'unit_price'   => $unitPrice,
                 'quantity'     => $quantity,
                 'options'      => $options,
-                'image'        => $product->primaryImage?->image_path,
+                'image'        => env("APP_URL"). "/storage/" . $product->primaryImage?->image_path,
             ];
         }
 

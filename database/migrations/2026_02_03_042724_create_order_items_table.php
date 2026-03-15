@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('product_id')->nullable()->constrained('products')->onDelete('cascade');
             $table->string('product_name');
             $table->string('product_sku');
+            $table->string('product_image')->nullable();
             $table->decimal('price', 10, 2);
             $table->decimal('unit_cost', 10, 2)->default(0); // Giá vốn lúc bán
             $table->integer('quantity');
