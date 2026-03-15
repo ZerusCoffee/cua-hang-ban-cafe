@@ -39,7 +39,7 @@ class MomoPaymentService implements PaymentServiceInterface
         $signature = hash_hmac('sha256', $rawHash, $this->secretKey);
 
         $response = Http::withOptions([
-            'verify' => false, // Tắt SSL verification nếu cần
+            'verify' => false,
         ])->post($this->endpoint, [
             'partnerCode' => $this->partnerCode,
             'requestId' => $requestId,
@@ -77,6 +77,29 @@ class MomoPaymentService implements PaymentServiceInterface
 
     public function callback(Request $request): JsonResponse
     {
+        // Callback để frontend redirect về, không xử lý order ở đây
+        $orderNumber = $request->input('orderId');
+        $resultCode = $request->input('resultCode');
+
+        $order = Order::where('order_number', $orderNumber)->firstOrFail();
+
+        return response()->json([
+            'status' => $resultCode == '0' ? 'success' : 'error',
+            'data' => [
+                'order_number' => $order->order_number,
+                'payment_status' => $order->payment_status,
+            ],
+        ]);
+    }
+
+    public function ipn(Request $request): JsonResponse
+    {
+        Log::info('MOMO IPN', $request->all());
+
+        if (!$this->verifySignature($request->all())) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
+        }
+
         $orderNumber = $request->input('orderId');
         $resultCode = $request->input('resultCode');
         $transId = $request->input('transId');
@@ -92,25 +115,13 @@ class MomoPaymentService implements PaymentServiceInterface
 
         $this->cartService->clear($order->customer_id);
 
-        return response()->json([
-            'status' => $resultCode == '0' ? 'success' : 'error'
-        ]);
-    }
-
-    public function ipn(Request $request): JsonResponse
-    {
-        Log::info('MOMO IPN', $request->all());
-        if (!$this->verifySignature($request->all())) {
-            return response()->json(['status' => 'error', 'message' => 'Invalid signature'], 400);
-        }
-
-        return $this->callback($request);
+        return response()->json(['status' => 'success']);
     }
 
     private function verifySignature(array $data): bool
     {
         $rawHash = "accessKey={$this->accessKey}"
-            . "&amount={$data['amount']}&extraData={$data['extraData']}"
+            . "&amount={$data['amount']}&extraData=" . ($data['extraData'] ?? '')
             . "&message={$data['message']}&orderId={$data['orderId']}"
             . "&orderInfo={$data['orderInfo']}&orderType={$data['orderType']}"
             . "&partnerCode={$data['partnerCode']}&payType={$data['payType']}"
