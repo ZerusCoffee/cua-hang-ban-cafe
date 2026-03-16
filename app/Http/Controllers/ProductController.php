@@ -103,21 +103,18 @@ class ProductController extends Controller
     /**
      * Show product
      */
-    public function show(Product $product)
-    {
-        try {
-            return $this->successResponse(
-                new ProductDTO($product),
-                "Lấy chi tiết sản phẩm thành công"
-            );
+public function show(Product $product)
+{
+    // Use the model's newCollection method
+    $products = $product->newCollection([$product]);
 
-        } catch (\Exception $e) {
-            return $this->errorResponse(
-                "Có lỗi xảy ra: " . $e->getMessage(),
-                500
-            );
-        }
-    }
+    $this->productService->attachStockStatus($products);
+
+    return $this->successResponse(
+        new ProductDTO($products->first()),
+        "Lấy chi tiết sản phẩm thành công"
+    );
+}
 
     public function getByCategory($categoryId)
     {
@@ -186,7 +183,7 @@ class ProductController extends Controller
     public function getRelated(Product $product)
     {
         $products = $this->productService->getRelatedProducts($product);
-        $this->productService->attachStockStatus($products->getCollection());
+        $this->productService->attachStockStatus($products);
         return $this->successResponse(
             ProductListDTO::collection($products),
             "Lấy các sản phẩm liên quan thành công"
