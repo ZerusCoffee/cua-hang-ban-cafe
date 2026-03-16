@@ -51,7 +51,6 @@ class CheckoutController extends Controller
         $response = $this->resolvePaymentService($request->payment_method)
             ->handle($order, $request->validated());
 
-        // Chỉ xóa giỏ khi COD (đã xác nhận luôn), các method khác chờ callback
         if ($request->payment_method === 'cod') {
             $this->cartService->clear($userId);
         }
@@ -74,6 +73,11 @@ class CheckoutController extends Controller
     public function vnpayCallback(Request $request): JsonResponse
     {
         return app(VnpayPaymentService::class)->callback($request);
+    }
+
+    public function vnpayIpn(Request $request): JsonResponse
+    {
+        return app();
     }
 
     public function momoCallback(Request $request): JsonResponse
