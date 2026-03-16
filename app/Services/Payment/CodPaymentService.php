@@ -35,6 +35,7 @@ class CodPaymentService
             'order_number' => $order->order_number,
             'total'        => $order->total,
             'status'       => $order->status,
+            'payment_method' => $order->payment_method,
             'payment_status' => $order->payment_status
         ], 'Đặt hàng COD thành công', 201);
     }

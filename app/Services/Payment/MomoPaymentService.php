@@ -108,7 +108,7 @@ class MomoPaymentService implements PaymentServiceInterface
 
         if ($resultCode == '0') {
             $this->orderService->markPaid($order, $transId, $request->all());
-            $order->updateStatus('confirmed', 'Thanh toán MOMO thành công');
+            $order->updateStatus('pending', 'Thanh toán MOMO thành công');
         } else {
             $order->update(['payment_status' => 'failed']);
         }
