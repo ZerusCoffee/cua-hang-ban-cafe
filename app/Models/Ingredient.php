@@ -35,6 +35,11 @@ class Ingredient extends Model
         return $this->hasMany(RecipeDetail::class);
     }
 
+    public function importLogs(): HasMany
+    {
+        return $this->hasMany(IngredientImportLog::class);
+    }
+
 
     protected static function booted()
     {
