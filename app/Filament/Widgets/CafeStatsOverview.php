@@ -26,8 +26,12 @@ class CafeStatsOverview extends StatsOverviewWidget
                 ->extraAttributes(['class' => 'text-2xl']),
 
             Stat::make('Lợi nhuận', number_format($todayProfit) . 'đ')
-                ->description('Biên: ' . round(($todayProfit/$todayRevenue)*100, 1) . '%')
-                ->descriptionIcon('heroicon-m-banknotes')
+                ->description(
+                    'Biên: ' . ($todayRevenue > 0
+                        ? round(($todayProfit / $todayRevenue) * 100, 1) . '%'
+                        : '0%'
+                    )
+                )->descriptionIcon('heroicon-m-banknotes')
                 ->color('info'),
 
             Stat::make('Đơn hàng', $todayOrders)

@@ -2,17 +2,19 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\ImportStatsWidget;
 use App\Filament\Widgets\StockLookupWidget;
 use Filament\Pages\Dashboard;
-use App\Filament\Widgets\StockInventoryWidget;
+use Filament\Support\Icons\Heroicon;
 
 class WarehousePage extends Dashboard
 {
-    protected static string|null|\BackedEnum $navigationIcon = 'heroicon-o-building-storefront';
+    protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedHome;
     protected static ?string $navigationLabel = 'Kho hàng';
     protected static ?string $title = 'Quản lý kho hàng';
+    protected static string|null|\UnitEnum $navigationGroup = 'Nhập hàng';
     protected static ?string $slug = 'warehouse';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 12;
 
     protected static string $routePath = 'warehouse';
 
@@ -20,6 +22,7 @@ class WarehousePage extends Dashboard
     {
         return [
             StockLookupWidget::class,
+            ImportStatsWidget::class
         ];
     }
 

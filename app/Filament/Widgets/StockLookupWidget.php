@@ -14,7 +14,7 @@ class StockLookupWidget extends TableWidget
 {
     protected static ?string $heading = 'Tra cứu tồn kho theo thời điểm';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public ?string $lookupDate = null;
 
@@ -42,8 +42,7 @@ class StockLookupWidget extends TableWidget
 
                 TextColumn::make('stock')
                     ->label('Tồn hiện tại')
-                    ->formatStateUsing(fn($state, $record) =>
-                        number_format($state, 2) . ' ' . ($record->unit?->symbol ?? '')),
+                    ->formatStateUsing(fn($state, $record) => number_format($state, 2) . ' ' . ($record->unit?->symbol ?? '')),
 
                 TextColumn::make('stock_lookup')
                     ->label(fn() => 'Tồn ngày ' . ($this->lookupDate ? \Carbon\Carbon::parse($this->lookupDate)->format('d/m/Y') : ''))
@@ -67,7 +66,7 @@ class StockLookupWidget extends TableWidget
                     ->color(function ($record, $state) {
                         if ($state === 'Chọn ngày' || $state === 'Chưa có') return 'gray';
 
-                        $value = (float) str_replace([',', ' '], '', $state);
+                        $value = (float)str_replace([',', ' '], '', $state);
 
                         return match (true) {
                             $value <= 0 => 'danger',
@@ -78,8 +77,7 @@ class StockLookupWidget extends TableWidget
 
                 TextColumn::make('threshold')
                     ->label('Ngưỡng')
-                    ->formatStateUsing(fn($state, $record) =>
-                        number_format($state, 2) . ' ' . ($record->unit?->symbol ?? '')),
+                    ->formatStateUsing(fn($state, $record) => number_format($state, 2) . ' ' . ($record->unit?->symbol ?? '')),
 
                 TextColumn::make('unit.name')
                     ->label('Đơn vị')
@@ -100,7 +98,9 @@ class StockLookupWidget extends TableWidget
                             ->label('Ngày tra cứu')
                             ->required()
                             ->default(now())
-                            ->maxDate(now()),
+                            ->maxDate(now())
+                            ->native(false)
+                            ->displayFormat('d/m/Y'),
                     ])
                     ->action(function (array $data) {
                         $this->lookupDate = $data['lookup_date'];
