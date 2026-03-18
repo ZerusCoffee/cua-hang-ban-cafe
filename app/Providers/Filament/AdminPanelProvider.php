@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\ProductExportReportPage;
 use App\Filament\Pages\WarehousePage;
 use App\Filament\Widgets\CafeStatsOverview;
 use App\Filament\Widgets\RevenueChartWidget;
@@ -40,7 +41,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
-                WarehousePage::class
+                WarehousePage::class,
+                ProductExportReportPage::class
             ])
             ->widgets([
                 CafeStatsOverview::class,
