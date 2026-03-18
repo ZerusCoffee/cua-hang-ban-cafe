@@ -28,6 +28,11 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             IngredientSeeder::class,
             ProductSeeder::class,
+            RecipeDetailSeeder::class,
+            OptionGroupSeeder::class,
+            OptionSeeder::class,
+            ProductOptionSeeder::class,
+            ProductOptionModifierSeeder::class,  
         ]);
     }
 }

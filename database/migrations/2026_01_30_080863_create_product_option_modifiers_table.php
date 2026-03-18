@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_option_id')->constrained('product_options')->onDelete('cascade');
             $table->foreignId('ingredient_id')->constrained('ingredients')->onDelete('cascade');
-            $table->decimal('delta_quantity', 10, 2);// size M thi tru them nguyen lieu
+            $table->decimal('delta_quantity', 10, 2);// size L thi tru them nguyen lieu
             $table->timestamps();
         });
     }
