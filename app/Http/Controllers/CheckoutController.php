@@ -77,7 +77,7 @@ class CheckoutController extends Controller
 
     public function vnpayIpn(Request $request): JsonResponse
     {
-        return app();
+        return app(VnpayPaymentService::class)->ipn($request);
     }
 
     public function momoCallback(Request $request): JsonResponse
