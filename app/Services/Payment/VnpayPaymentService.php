@@ -21,7 +21,7 @@ class VnpayPaymentService implements PaymentServiceInterface
             'vnp_Amount' => $order->total * 100,
             'vnp_Locale' => 'vn',
             'vnp_IpAddr' => request()->ip(),
-            'vnp_ReturnUrl' => route('vnpay.callback'),
+            'vnp_ReturnUrl' => env("PUBLIC_CLIENT_URL") . '/payment/vnpay/callback',
             'vnp_CreateDate' => now()->format('YmdHis'),
             'vnp_CurrCode' => 'VND',
             'vnp_Command' => 'pay',
