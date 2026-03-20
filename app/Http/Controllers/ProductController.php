@@ -68,7 +68,7 @@ class ProductController extends Controller
 
         // limit
         $limit = (int)$request->get('limit', 8);
-        $limit = min($limit, 50);
+        $limit = min($limit, 100);
 
         $products = $query->paginate($limit);
 

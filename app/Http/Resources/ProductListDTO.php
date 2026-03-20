@@ -24,6 +24,7 @@ class ProductListDTO extends JsonResource
                 ? asset('storage/' . $this->primaryImage->image_path)
                 : null,
             'inStock' => (bool) ($this->in_stock ?? true),
+            'updateAt' => $this->updated_at
         ];
     }
 }
