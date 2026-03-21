@@ -39,6 +39,7 @@ class IngredientForm
                 TextInput::make('sku')
                     ->label('SKU')
                     ->maxLength(100)
+                    ->hidden()
                     ->unique(ignoreRecord: true)
                     ->placeholder('Tự động nếu để trống'),
 
@@ -46,6 +47,7 @@ class IngredientForm
                     ->label('Giá Nhập')
                     ->required()
                     ->numeric()
+                    ->hidden()
                     ->suffix('₫')
                     ->minValue(0),
 
@@ -53,6 +55,7 @@ class IngredientForm
                     ->label('Tồn kho')
                     ->required()
                     ->numeric()
+                    ->hidden()
                     ->default(0)
                     ->minValue(0),
 

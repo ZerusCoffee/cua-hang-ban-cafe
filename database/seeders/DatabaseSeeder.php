@@ -27,12 +27,13 @@ class DatabaseSeeder extends Seeder
             UnitSeeder::class,
             CategorySeeder::class,
             IngredientSeeder::class,
+            ImportOrderSeeder::class,
             ProductSeeder::class,
-            RecipeDetailSeeder::class,
+            // RecipeDetailSeeder::class, // RecipeDetailSeeder đã được gọi trong ProductSeeder
             OptionGroupSeeder::class,
             OptionSeeder::class,
             ProductOptionSeeder::class,
-            ProductOptionModifierSeeder::class,  
+            ProductOptionModifierSeeder::class,
         ]);
     }
 }

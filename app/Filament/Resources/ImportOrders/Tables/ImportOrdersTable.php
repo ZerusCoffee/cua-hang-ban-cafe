@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\ImportOrders\Tables;
 
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -78,7 +80,25 @@ class ImportOrdersTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                EditAction::make(),
+                Action::make('complete')
+                    ->label('Hoàn thành')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Xác nhận hoàn thành phiếu nhập')
+                    ->modalDescription('Sau khi hoàn thành, tồn kho sẽ được cập nhật và phiếu không thể sửa. Bạn chắc chắn?')
+                    ->modalSubmitActionLabel('Hoàn thành')
+                    ->hidden(fn ($record) => $record->status === 'completed')
+                    ->action(function ($record) {
+                        $record->load('details');
+                        $record->complete();
+
+                        Notification::make()
+                            ->title('Hoàn thành phiếu nhập thành công!')
+                            ->body('Tồn kho nguyên liệu đã được cập nhật.')
+                            ->success()
+                            ->send();
+                    }),
                 DeleteAction::make()
                     ->hidden(fn ($record) => $record->status === 'completed'),
                 RestoreAction::make(),

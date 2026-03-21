@@ -87,8 +87,10 @@ class ImportOrder extends Model
                     $averageCost = $newCost;
                 }
 
-                // Làm tròn tiền VNĐ
-                $averageCost = round($averageCost);
+                // KHÔNG LÀM TRÒN THEO NGHÌN NỮA VÌ CÓ NHỮNG NGUYÊN LIỆU ĐƠN VỊ LÀ GRAM/ML GIÁ RẤT NHỎ
+                // NẾU LÀM TRÒN (averageCost / 1000) * 1000 SẼ BỊ VỀ 0.
+                // CHỈ LÀM TRÒN LÊN 2 CHỮ SỐ THẬP PHÂN NẾU CẦN
+                $averageCost = round($averageCost, 2);
 
                 // Update nguyên liệu
                 $ingredient->update([
