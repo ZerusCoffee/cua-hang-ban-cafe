@@ -20,6 +20,11 @@ class Ingredient extends Model
         'threshold'
     ];
 
+    protected $attributes = [
+        'cost_price' => 0,
+        'stock' => 0,
+    ];
+
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);

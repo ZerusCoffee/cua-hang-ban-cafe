@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Models\Order;
+use App\Services\CartService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 class VnpayPaymentService implements PaymentServiceInterface
 {
-    public function __construct(private OrderService $orderService)
+    public function __construct(private OrderService $orderService, private CartService $cartService)
     {
     }
 
@@ -131,6 +132,8 @@ class VnpayPaymentService implements PaymentServiceInterface
                 'code' => $responseCode,
             ]);
         }
+
+        $this->cartService->clear($order->customer_id);
 
         // 7. VNPAY bắt buộc response đúng format này
         return response('{"RspCode":"00","Message":"Confirm success"}', 200)

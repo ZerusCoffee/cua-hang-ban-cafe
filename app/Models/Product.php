@@ -73,12 +73,8 @@ class Product extends Model
         }
 
         return $recipeDetails->sum(function ($detail) {
-            $latestPrice = ImportOrderDetail::query()
-                ->where('ingredient_id', $detail->ingredient_id)
-                ->whereHas('importOrder', fn($q) => $q->where('status', 'completed'))
-                ->latest()
-                ->value('unit_price') ?? $detail->ingredient?->cost_price ?? 0;
-
+            // Lấy trực tiếp từ giá cost_price đã được tính toán trong bảng ingredient
+            $latestPrice = $detail->ingredient?->cost_price ?? 0;
             return $detail->amount * $latestPrice;
         });
     }

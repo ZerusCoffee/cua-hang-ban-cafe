@@ -114,13 +114,63 @@ class RecipeDetailSeeder extends Seeder
             ];
         }
 
-        // Trà sữa
-        if (str_contains($name, 'trà sữa')) {
+        // Trà xanh sữa
+        if (str_contains($name, 'trà xanh sữa')) {
             return [
-                'Trà đen' => 12,
+                'Trà xanh' => 15,
                 'Bột sữa' => 25,
                 'Đường trắng' => 20,
                 'Kem béo' => 15,
+            ];
+        }
+
+        // Trà đen Macchiato
+        if (str_contains($name, 'trà đen macchiato')) {
+            return [
+                'Trà đen' => 15,
+                'Đường trắng' => 20,
+                'Kem béo' => 30,
+                'Whipping cream' => 20,
+                'Sữa tươi' => 20,
+            ];
+        }
+
+        // Matcha Latte
+        if (str_contains($name, 'matcha latte')) {
+            return [
+                'Bột matcha' => 10,
+                'Sữa tươi' => 120,
+                'Đường trắng' => 15,
+            ];
+        }
+
+        // Trà đào cam sả
+        if (str_contains($name, 'trà đào cam sả')) {
+            return [
+                'Trà đen' => 10,
+                'Siro đào' => 20,
+                'Đường trắng' => 15,
+                'Đào ngâm' => 30,
+                'Cam tươi' => 1,
+            ];
+        }
+
+        // Trà dâu tươi
+        if (str_contains($name, 'trà dâu tươi')) {
+            return [
+                'Trà đen' => 10,
+                'Siro dâu' => 15,
+                'Dâu tây' => 50,
+                'Đường trắng' => 20,
+            ];
+        }
+
+        // Sữa chua đá xay
+        if (str_contains($name, 'sữa chua đá xay')) {
+            return [
+                'Sữa tươi' => 50,
+                'Sữa đặc' => 30,
+                'Đường trắng' => 10,
             ];
         }
 
@@ -128,6 +178,14 @@ class RecipeDetailSeeder extends Seeder
         if (str_contains($name, 'nước chanh')) {
             return [
                 'Chanh tươi' => 2,
+                'Đường trắng' => 20,
+            ];
+        }
+
+        // Nước ép dâu tây
+        if (str_contains($name, 'nước ép dâu tây')) {
+            return [
+                'Dâu tây' => 150,
                 'Đường trắng' => 20,
             ];
         }
@@ -158,30 +216,20 @@ class RecipeDetailSeeder extends Seeder
             ];
         }
 
-        // Nước dừa
-        if (str_contains($name, 'nước dừa')) {
+        // Bánh flan
+        if (str_contains($name, 'bánh flan')) {
             return [
-                'Đường trắng' => 10,
+                'Bánh flan' => 1,
             ];
         }
 
-        // Smoothie dâu
-        if (str_contains($name, 'smoothie dâu')) {
+        // Pudding trứng
+        if (str_contains($name, 'pudding trứng')) {
             return [
-                'Dâu tây' => 100,
-                'Sữa tươi' => 60,
-                'Đường trắng' => 15,
-            ];
-        }
-
-        // Smoothie việt quất
-        if (str_contains($name, 'smoothie việt quất')) {
-            return [
-                'Sữa tươi' => 60,
-                'Đường trắng' => 15,
+                'Pudding trứng' => 1,
             ];
         }
 
         return [];
     }
-} 
+}
