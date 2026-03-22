@@ -97,17 +97,12 @@ class ProductSeeder extends Seeder
 
             // Làm tròn giá lên đến hàng nghìn (VD: 21300 -> 22000, 21000 -> 21000)
             $recommendedPrice = ceil($calculatedPrice / 1000) * 1000;
-
-            // Do làm tròn lên, tỷ suất lợi nhuận thực tế sẽ thay đổi
-            // Cập nhật lại profit_rate cho chính xác với giá đã làm tròn
             $realProfitRate = round((($recommendedPrice - $costPrice) / $costPrice) * 100, 2);
         } else {
-            // Nếu không có công thức, set giá mặc định
             $recommendedPrice = rand(20, 60) * 1000;
             $realProfitRate = $profitRate;
         }
 
-        // Cập nhật lại giá và profit_rate
         $product->update([
             'recommended_price' => $recommendedPrice,
             'profit_rate' => $realProfitRate,
