@@ -170,13 +170,13 @@ class ImportStatsWidget extends TableWidget
                                     Section::make('Thời gian')
                                         ->schema([
                                             TextEntry::make('time_range')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(\Carbon\Carbon::parse($this->fromDate)->format('d/m/Y') . ' - ' . \Carbon\Carbon::parse($this->toDate)->format('d/m/Y')),
                                         ]),
                                     Section::make('Số nguyên liệu')
                                         ->schema([
                                             TextEntry::make('ingredient_count')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($ingredientCount)),
                                         ]),
                                 ]),
@@ -186,7 +186,7 @@ class ImportStatsWidget extends TableWidget
                                     Section::make('Tổng số lần nhập')
                                         ->schema([
                                             TextEntry::make('total_imports')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($totalImports))
                                                 ->color('primary')
                                                 ->size('text-2xl'),
@@ -194,7 +194,7 @@ class ImportStatsWidget extends TableWidget
                                     Section::make('Tổng số lượng')
                                         ->schema([
                                             TextEntry::make('total_quantity')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($totalQuantity, 2))
                                                 ->color('success')
                                                 ->size('text-2xl'),
@@ -204,7 +204,7 @@ class ImportStatsWidget extends TableWidget
                             Section::make('Tổng giá trị nhập')
                                 ->schema([
                                     TextEntry::make('total_value')
-                                        ->label('')
+                                        ->hiddenLabel()
                                         ->state(number_format($totalValue, 0) . ' VNĐ')
                                         ->color('warning')
                                         ->size('text-3xl')

@@ -227,13 +227,13 @@ class ProductExportReportWidget extends TableWidget
                                     Section::make('Thời gian')
                                         ->schema([
                                             TextEntry::make('time_range')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(\Carbon\Carbon::parse($this->fromDate)->format('d/m/Y') . ' - ' . \Carbon\Carbon::parse($this->toDate)->format('d/m/Y')),
                                         ]),
                                     Section::make('Số sản phẩm')
                                         ->schema([
                                             TextEntry::make('product_count')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($productCount)),
                                         ]),
                                 ]),
@@ -243,7 +243,7 @@ class ProductExportReportWidget extends TableWidget
                                     Section::make('Tổng đơn hàng')
                                         ->schema([
                                             TextEntry::make('total_orders')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($totalOrders))
                                                 ->color('info')
                                                 ->size('text-2xl'),
@@ -251,7 +251,7 @@ class ProductExportReportWidget extends TableWidget
                                     Section::make('Tổng số lượng')
                                         ->schema([
                                             TextEntry::make('total_quantity')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($totalQuantity))
                                                 ->color('primary')
                                                 ->size('text-2xl'),
@@ -259,7 +259,7 @@ class ProductExportReportWidget extends TableWidget
                                     Section::make('Tỉ lệ LN TB')
                                         ->schema([
                                             TextEntry::make('avg_margin')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($avgMargin, 1) . '%')
                                                 ->color($avgMargin >= 20 ? 'success' : 'warning')
                                                 ->size('text-2xl'),
@@ -271,7 +271,7 @@ class ProductExportReportWidget extends TableWidget
                                     Section::make('Tổng doanh thu')
                                         ->schema([
                                             TextEntry::make('total_revenue')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($totalRevenue, 0) . ' VNĐ')
                                                 ->color('success')
                                                 ->size('text-2xl'),
@@ -279,7 +279,7 @@ class ProductExportReportWidget extends TableWidget
                                     Section::make('Tổng chi phí')
                                         ->schema([
                                             TextEntry::make('total_cost')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($totalCost, 0) . ' VNĐ')
                                                 ->color('danger')
                                                 ->size('text-2xl'),
@@ -287,7 +287,7 @@ class ProductExportReportWidget extends TableWidget
                                     Section::make('Tổng lợi nhuận')
                                         ->schema([
                                             TextEntry::make('total_profit')
-                                                ->label('')
+                                                ->hiddenLabel()
                                                 ->state(number_format($totalProfit, 0) . ' VNĐ')
                                                 ->color($totalProfit >= 0 ? 'success' : 'danger')
                                                 ->size('text-2xl')
