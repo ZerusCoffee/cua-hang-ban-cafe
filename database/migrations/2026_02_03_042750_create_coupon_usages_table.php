@@ -15,7 +15,15 @@ return new class extends Migration {
             $table->foreignId('coupon_id')->constrained('coupons')->onDelete('cascade');
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
+
+            // Lưu lại số tiền thực tế đã giảm tại thời điểm dùng
+            $table->decimal('discount_amount', 10, 2)->default(0);
+
             $table->timestamps();
+
+            // Indexes để query nhanh
+            $table->index(['coupon_id', 'customer_id']); // khách này dùng coupon này mấy lần?
+            $table->index('order_id');                   //order này dùng coupon nào?
         });
     }
 

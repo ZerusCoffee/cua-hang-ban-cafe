@@ -10,6 +10,8 @@ Route::get("/user", function (Request $request) {
 Route::prefix("v1")->group(function () {
     Route::prefix("auth")->group(base_path('routes/api/auth.php'));
 
+    Route::prefix("coupon")->group(base_path('routes/api/coupon.php'));
+
     Route::prefix("address")->group(base_path('routes/api/address.php'));
 
     Route::prefix("product")->group(base_path('routes/api/product.php'));
