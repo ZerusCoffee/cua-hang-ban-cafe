@@ -2,129 +2,124 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Coupon extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        "code",
-        "name",
-        "description",
-        "type",
-        "value",
-        "minimum_order_amount",
-        "maximum_discount_amount",
-        "usage_limit",
-        "usage_limit_per_customer",
-        "starts_at",
-        "expires_at",
-        "is_active",
+        'code',
+        'name',
+        'description',
+        'type',
+        'value',
+        'minimum_order_amount',
+        'maximum_discount_amount',
+        'usage_limit',
+        'used_count',
+        'usage_limit_per_customer',
+        'starts_at',
+        'expires_at',
+        'is_active',
     ];
 
     protected $casts = [
-        "value" => "decimal:2",
-        "minimum_order_amount" => "decimal:2",
-        "maximum_discount_amount" => "decimal:2",
-        "usage_limit" => "integer",
-        "usage_limit_per_customer" => "integer",
-        "starts_at" => "datetime",
-        "expires_at" => "datetime",
-        "is_active" => "boolean",
+        'value' => 'decimal:2',
+        'minimum_order_amount' => 'decimal:2',
+        'maximum_discount_amount' => 'decimal:2',
+        'starts_at' => 'datetime',
+        'expires_at' => 'datetime',
+        'is_active' => 'boolean',
     ];
 
-    #[Scope]
-    protected function active(Builder $builder)
+    public function usages(): HasMany
     {
-        return $builder->where("is_active", true);
+        return $this->hasMany(CouponUsage::class);
     }
 
-    //check valid coupon
-    protected function valid(Builder $builder)
+    public function scopeActive($query)
     {
-        $builder
-            ->where("is_active", true)
-            ->where(function ($query) {
-                $query
-                    ->whereNull("starts_at")
-                    ->orWhere("starts_at", "<=", now()); // Bắt đầu trước hoặc vào hiện tại
-            })
-            ->where(function ($query) {
-                $query
-                    ->whereNull("expires_at")
-                    ->orWhere("expires_at", ">=", now()); // Kết thúc sau hoặc vào hiện tại
-            });
+        return $query->where('is_active', true);
     }
 
-    public function orders()
+    public function scopeValid($query)
     {
-        return $this->hasMany(Order::class); // 1 Mã giảm giá có nhiều Đơn hàng
+        return $query->active()
+            ->where(fn($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()));
     }
 
-    public function usages()
-    {
-        return $this->hasMany(CouponUsage::class); // 1 Mã giảm giá có nhiều Lịch sử sử dụng
-    }
 
-    public function isValid()
+    /**
+     * CouponSeeder còn hiệu lực không?
+     */
+    public function isValid(): bool
     {
-        if (!$this->is_active) {
-            return false;
-        }
-        if ($this->starts_at && $this->starts_at->isFuture()) {
-            return false;
-        }
-        if ($this->expires_at && $this->expires_at->isPast()) {
-            return false;
-        }
-        if (
-            $this->usage_limit &&
-            $this->usages()->count() >= $this->usage_limit
-        ) {
-            return false;
-        }
+        if (!$this->is_active) return false;
+        if ($this->starts_at && $this->starts_at->isFuture()) return false;
+        if ($this->expires_at && $this->expires_at->isPast()) return false;
+        if ($this->usage_limit && $this->used_count >= $this->usage_limit) return false;
+
         return true;
     }
 
-    public function canBeUsedByCustomer($customerId)
+    /**
+     * Khách hàng này đã dùng coupon bao nhiêu lần?
+     */
+    public function usageCountForCustomer(int $customerId): int
     {
-        if (!$this->isValid()) {
-            return false;
-        }
+        return $this->usages()->where('customer_id', $customerId)->count();
+    }
+
+    /**
+     * Khách hàng này còn được dùng không?
+     */
+    public function canBeUsedByCustomer(int $customerId): bool
+    {
+        if (!$this->isValid()) return false;
+
         if ($this->usage_limit_per_customer) {
-            $usageCount = $this->usages()
-                ->where("customer_id", $customerId)
-                ->count(); // Đếm số lần sử dụng của khách hàng
-            if ($usageCount >= $this->usage_limit_per_customer) {
-                return false;
-            }
+            return $this->usageCountForCustomer($customerId) < $this->usage_limit_per_customer;
         }
+
         return true;
     }
 
-    public function calculateDiscount($subtotal)
+    /**
+     * Tính số tiền giảm thực tế cho đơn hàng
+     */
+    public function calculateDiscount(float $orderAmount): float
     {
-        if (
-            $this->minimum_order_amount &&
-            $subtotal < $this->minimum_order_amount
-        ) {
-            return 0;
+        if ($orderAmount < $this->minimum_order_amount) return 0;
+
+        $discount = match ($this->type) {
+            'percentage' => $orderAmount * ($this->value / 100),
+            'fixed' => $this->value,
+            'free_shipping' => 0, // xử lý riêng bên shipping
+            default => 0,
+        };
+
+        if ($this->maximum_discount_amount) {
+            $discount = min($discount, $this->maximum_discount_amount);
         }
-        if ($this->type === "fixed") {
-            $discount = $this->value;
-        } elseif ($this->type === "percentage") {
-            $discount = ($this->value / 100) * $subtotal; // Tính phần trăm giảm giá
-            if (
-                $this->maximum_discount_amount &&
-                $discount > $this->maximum_discount_amount
-            ) {
-                // Giới hạn giảm giá tối đa
-                $discount = $this->maximum_discount_amount;
-            }
-        } else {
-            $discount = 0;
-        }
-        return min($discount, $subtotal); // Giảm giá không vượt quá tổng phụ
+
+        // Không giảm quá tổng đơn hàng
+        return min($discount, $orderAmount);
+    }
+
+    /**
+     * Label hiển thị loại coupon
+     */
+    public function getTypeLabelAttribute(): string
+    {
+        return match ($this->type) {
+            'percentage' => "Giảm {$this->value}%",
+            'fixed' => 'Giảm ' . number_format($this->value, 0, ',', '.') . 'đ',
+            'free_shipping' => 'Miễn phí vận chuyển',
+            default => $this->type,
+        };
     }
 }

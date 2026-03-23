@@ -3,113 +3,96 @@
 namespace App\Http\Controllers;
 
 use App\Models\Coupon;
+use App\Services\CouponService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CouponController extends Controller
 {
+
+    public function __construct(protected CouponService $couponService) {}
+
     /**
-     * Display a listing of the resource.
+     * GET /api/coupons
+     * Danh sách coupon đang có hiệu lực (hiển thị cho khách chọn)
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        try {
-            $query = Coupon::query();
+        $customerId = $request->user()->id;
 
-            // Lọc theo trạng thái
-            if ($request->has("status")) {
-                switch ($request->status) {
-                    case "active":
-                        $query->active();
-                        break;
-                    case "expired":
-                        $query->where("expires_at", "<", now());
-                        break;
-                    case "upcoming":
-                        $query->where("starts_at", ">", now());
-                        break;
-                    case "inactive":
-                        $query->where("is_active", false);
-                        break;
-                    case "valid":
-                        $query->valid();
-                        break;
-                }
-            }
+        $coupons = Coupon::valid()
+            ->get()
+            ->filter(fn($coupon) => $coupon->canBeUsedByCustomer($customerId))
+            ->map(fn($coupon) => [
+                'code'                    => $coupon->code,
+                'name'                    => $coupon->name,
+                'description'             => $coupon->description,
+                'type_label'              => $coupon->type_label,
+                'minimum_order_amount'    => $coupon->minimum_order_amount,
+                'maximum_discount_amount' => $coupon->maximum_discount_amount,
+                'expires_at'              => $coupon->expires_at?->format('d/m/Y H:i'),
+            ])
+            ->values();
 
-            // Lọc theo type
-            if ($request->has("type")) {
-                $query->where("type", $request->type);
-            }
+        return $this->successResponse($coupons);
+    }
 
-            // Tìm kiếm theo code hoặc name
-            if ($request->has("search")) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where("code", "LIKE", "%{$search}%")->orWhere(
-                        "name",
-                        "LIKE",
-                        "%{$search}%",
-                    );
-                });
-            }
+    /**
+     * POST /api/coupons/validate
+     * Kiểm tra coupon có hợp lệ không (dùng trước khi đặt hàng)
+     */
+    public function validate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'code'         => 'required|string',
+            'order_amount' => 'required|numeric|min:0',
+        ]);
 
-            // Sắp xếp
-            $sortBy = $request->get("sort_by", "created_at");
-            $sortOrder = $request->get("sort_order", "desc");
-            $query->orderBy($sortBy, $sortOrder);
+        $result = $this->couponService->validate(
+            code:        $request->code,
+            customerId:  $request->user()->id,
+            orderAmount: $request->order_amount,
+        );
 
-            // Phân trang
-            $perPage = $request->get("per_page", 15);
-            $coupons = $query->paginate($perPage);
-
-            // Thêm thông tin bổ sung
-            $coupons->getCollection()->transform(function ($coupon) {
-                $coupon->used_count = $coupon->usages()->count();
-                $coupon->remaining_uses = $coupon->getRemainingUsesAttribute();
-                return $coupon;
-            });
-
-            return $this->successResponse(
-                $coupons,
-                "Lấy danh sách coupon thành công",
-            );
-        } catch (\Exception $e) {
-            return $this->errorResponse(
-                "Có lỗi xảy ra khi lấy danh sách coupon: " . $e->getMessage(),
-                500,
-            );
+        if (!$result['valid']) {
+            return $this->errorResponse($result['message'], 422);
         }
+
+        return $this->successResponse([
+            'discount_amount' => $result['discount_amount'],
+            'coupon'          => [
+                'code' => $result['coupon']->code,
+                'name' => $result['coupon']->name,
+                'type' => $result['coupon']->type,
+            ],
+        ], $result['message']);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * POST /api/coupons/apply
+     * Apply coupon vào order sau khi order đã được tạo
      */
-    public function store(Request $request)
+    public function apply(Request $request): JsonResponse
     {
-        //
-    }
+        $request->validate([
+            'code'         => 'required|string',
+            'order_id'     => 'required|integer|exists:orders,id',
+            'order_amount' => 'required|numeric|min:0',
+        ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        $result = $this->couponService->validateAndApply(
+            code:        $request->code,
+            customerId:  $request->user()->id,
+            orderId:     $request->order_id,
+            orderAmount: $request->order_amount,
+        );
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        if (!$result['valid']) {
+            return $this->errorResponse($result['message'], 422);
+        }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return $this->successResponse([
+            'discount_amount' => $result['discount_amount'],
+        ], $result['message']);
     }
 }
