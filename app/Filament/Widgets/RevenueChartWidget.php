@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Widgets\ChartWidget;
 use App\Models\OrderProfitLog;
 use Illuminate\Support\Facades\DB;
@@ -9,6 +10,7 @@ use Carbon\Carbon;
 
 class RevenueChartWidget extends ChartWidget
 {
+    use HasWidgetShield;
     protected static ?int $sort = 4;
 
     protected ?string $heading = 'Doanh thu & Lợi nhuận';

@@ -3,11 +3,13 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Widgets\ProductExportReportWidget;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Dashboard;
 use Filament\Support\Icons\Heroicon;
 
 class ProductExportReportPage extends Dashboard
 {
+    use HasPageShield;
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedDocumentChartBar;
     protected static ?string $navigationLabel = 'Báo cáo xuất SP';
     protected static ?string $title = 'Báo cáo xuất sản phẩm';

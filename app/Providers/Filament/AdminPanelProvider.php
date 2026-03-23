@@ -8,6 +8,7 @@ use App\Filament\Widgets\CafeStatsOverview;
 use App\Filament\Widgets\RevenueChartWidget;
 use App\Filament\Widgets\RecentImportsWidget;
 use App\Filament\Widgets\TopProductsWidget;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -63,6 +64,22 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->plugins([
+                FilamentShieldPlugin::make()
+                    ->navigationLabel('Phân quyền')
+                    ->navigationGroup('Hệ thống')
+                    ->navigationSort(99)
+                    ->gridColumns([
+                        'default' => 1,
+                        'sm'      => 2,
+                        'lg'      => 3,
+                    ])
+                    ->checkboxListColumns([
+                        'default' => 1,
+                        'sm'      => 2,
+                        'lg'      => 4,
+                    ]),
             ]);
     }
 }
