@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Models\OrderProfitLog;
@@ -9,6 +10,7 @@ use App\Models\Order;
 
 class CafeStatsOverview extends StatsOverviewWidget
 {
+    use HasWidgetShield;
     protected function getStats(): array
     {
         $today = today();

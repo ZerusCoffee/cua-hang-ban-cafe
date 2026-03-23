@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\OrderProfitLog;
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Widgets\TableWidget;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class TopProductsWidget extends TableWidget
 {
+    use HasWidgetShield;
     protected static ?string $heading = 'Sản phẩm bán chạy hôm nay';
 
     protected static ?int $sort = 2;
