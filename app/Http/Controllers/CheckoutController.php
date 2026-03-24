@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderCreated;
 use App\Http\Requests\CheckoutRequest;
 use App\Services\CartService;
 use App\Services\OrderService;
@@ -46,6 +47,8 @@ class CheckoutController extends Controller
             customerId: $userId,
             data: $request->validated(),
         );
+
+        event(new OrderCreated($order)); //notification server
 
         // Delegate sang payment service tương ứng
         $response = $this->resolvePaymentService($request->payment_method)

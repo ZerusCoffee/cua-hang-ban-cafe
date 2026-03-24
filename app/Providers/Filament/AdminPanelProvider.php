@@ -80,6 +80,9 @@ class AdminPanelProvider extends PanelProvider
                         'sm'      => 2,
                         'lg'      => 4,
                     ]),
-            ]);
+            ])
+            ->broadcasting()
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s');
     }
 }
