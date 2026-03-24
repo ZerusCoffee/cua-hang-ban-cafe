@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderCreated;
 use App\Http\Requests\CheckoutRequest;
-use App\Models\User;
 use App\Services\CartService;
 use App\Services\OrderService;
 use App\Services\Payment\CodPaymentService;
 use App\Services\Payment\MomoPaymentService;
 use App\Services\Payment\PaypalPaymentService;
 use App\Services\Payment\VnpayPaymentService;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -50,16 +48,7 @@ class CheckoutController extends Controller
             data: $request->validated(),
         );
 
-        $admins = User::role(['super_admin'])->get();
-
-        foreach ($admins as $admin) {
-            Notification::make()
-                ->title('Đơn hàng mới #' . $order->id)
-                ->icon('heroicon-o-shopping-bag')
-                ->iconColor('success')
-                ->duration(10000)
-                ->broadcast($admin);
-        }
+        event(new OrderCreated($order)); //notification server
 
         // Delegate sang payment service tương ứng
         $response = $this->resolvePaymentService($request->payment_method)
