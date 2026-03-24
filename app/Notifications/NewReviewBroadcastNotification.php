@@ -2,19 +2,21 @@
 
 namespace App\Notifications;
 
-use App\Models\Order;
-use Illuminate\Notifications\Messages\BroadcastMessage;
-use Illuminate\Notifications\Notification;
+use App\Models\Review;
 use Filament\Notifications\Notification as FilamentNotification;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
-
-class NewOrderBroadcastNotification extends Notification
+class NewReviewBroadcastNotification extends Notification
 {
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(public Order $order)
+    public function __construct(public Review $review)
     {
         //
     }
@@ -32,8 +34,9 @@ class NewOrderBroadcastNotification extends Notification
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
         return FilamentNotification::make()
-            ->title('Đơn hàng mới #' . $this->order->order_number)
-            ->icon('heroicon-o-shopping-bag')
+            ->title('Đánh giá mới #' . $this->review->id)
+            ->body('Sản phẩm ' . $this->review->product()->name)
+            ->icon(Heroicon::OutlinedStar)
             ->iconColor('success')
             ->getBroadcastMessage();
     }

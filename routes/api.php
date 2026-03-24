@@ -2,12 +2,16 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
+
 
 Route::get("/user", function (Request $request) {
     return $request->user();
 })->middleware("auth:sanctum");
 
 Route::prefix("v1")->group(function () {
+    Broadcast::routes(['middleware' => ['auth:sanctum']]);
+
     Route::prefix("auth")->group(base_path('routes/api/auth.php'));
 
     Route::prefix("coupon")->group(base_path('routes/api/coupon.php'));
