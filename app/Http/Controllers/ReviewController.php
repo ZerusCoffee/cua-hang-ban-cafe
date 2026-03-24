@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ReviewCreated;
 use App\Models\Review;
 use App\Services\ReviewService;
 use Illuminate\Http\JsonResponse;
@@ -59,6 +60,8 @@ class ReviewController extends Controller
             $request->only('order_id', 'rating', 'title', 'comment', 'images'),
             ['product_id' => $productId],
         ));
+
+        event(new ReviewCreated($review));
 
         return $this->successResponse($review, 'Đánh giá của bạn đã được gửi, chờ duyệt.', 201);
     }

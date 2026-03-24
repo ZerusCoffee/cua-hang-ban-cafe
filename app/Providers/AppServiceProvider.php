@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Events\OrderCreated;
+use App\Events\ReviewCreated;
 use App\Listeners\SendOrderNotifications;
+use App\Listeners\SendReviewNotification;
 use App\Models\ImportOrderDetail;
 use App\Models\Ingredient;
 use App\Models\Order;
@@ -34,6 +36,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             OrderCreated::class,
             SendOrderNotifications::class,
+        );
+        Event::listen(
+            ReviewCreated::class,
+            SendReviewNotification::class
         );
     }
 }

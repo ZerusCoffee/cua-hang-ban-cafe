@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Events\OrderStatusUpdated;
 use App\Models\Ingredient;
 use App\Models\Order;
 use App\Models\OrderProfitLog;
@@ -29,6 +30,9 @@ class OrderObserver
     {
         // Chỉ xử lý khi chuyển sang 'confirmed'
         if (!$order->wasChanged('status')) return;
+
+        broadcast(new OrderStatusUpdated($order)); //bao doi status cho client
+
         if ($order->status !== 'confirmed') return;
 
         DB::transaction(function () use ($order) {
