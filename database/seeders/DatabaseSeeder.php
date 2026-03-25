@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -16,14 +17,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // default admin
-        User::factory()->create([
-            'name' => 'admin',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('admin')
-        ]);
-
         $this->call([
+            PermissionSeeder::class,
+            RoleSeeder::class,
+            UserSeeder::class,
             UnitSeeder::class,
             CategorySeeder::class,
             IngredientSeeder::class,
