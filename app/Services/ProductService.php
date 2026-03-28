@@ -42,13 +42,29 @@ class ProductService
 
 
     public function getRelatedProducts(Product $product)
-    {
-        return Product::where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
+{
+    // Lấy sản phẩm cùng category (ưu tiên)
+    $relatedProducts = Product::where('category_id', $product->category_id)
+        ->where('id', '!=', $product->id)
+        ->inRandomOrder()
+        ->limit(5) // Giới hạn 5 sản phẩm cùng category
+        ->get();
+    
+    // Nếu chưa đủ 8 sản phẩm, lấy thêm sản phẩm bất kỳ
+    if ($relatedProducts->count() < 8) {
+        $needCount = 8 - $relatedProducts->count();
+        
+        $randomProducts = Product::where('id', '!=', $product->id)
+            ->whereNotIn('id', $relatedProducts->pluck('id'))
             ->inRandomOrder()
-            ->limit(8)
+            ->limit($needCount)
             ->get();
+        
+        $relatedProducts = $relatedProducts->concat($randomProducts);
     }
+    
+    return $relatedProducts;
+}  
 
     public function attachStockStatus(Collection $products): Collection
     {

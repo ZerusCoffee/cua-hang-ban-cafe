@@ -16,4 +16,11 @@ class CategoryController extends Controller
             "Lấy category thành công"
         );
     }
+
+    public function show(Category $category) {
+        return $this->successResponse(
+            new CategoryDTO($category),
+            "Lấy category thành công"
+        );
+}
 }

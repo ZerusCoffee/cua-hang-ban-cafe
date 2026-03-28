@@ -79,7 +79,7 @@ class ReviewController extends Controller
      */
     public function update(Request $request, Review $review): JsonResponse
     {
-         if ($review->customer_id !== $request->user()->id) {
+        if ($review->customer_id !== $request->user()->id) {
             return $this->errorResponse('Bạn không có quyền chỉnh sửa đánh giá này.', 403);
         }
 
