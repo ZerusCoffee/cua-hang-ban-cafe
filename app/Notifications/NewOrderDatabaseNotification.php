@@ -4,8 +4,6 @@ namespace App\Notifications;
 
 use App\Models\Order;
 use Filament\Actions\Action;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Filament\Notifications\Notification as FilamentNotification;
 
