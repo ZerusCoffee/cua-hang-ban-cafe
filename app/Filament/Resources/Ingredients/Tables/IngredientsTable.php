@@ -6,9 +6,13 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
+use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class IngredientsTable
 {
@@ -78,6 +82,35 @@ class IngredientsTable
             ])
             ->filters([
                 TrashedFilter::make(),
+
+                SelectFilter::make('status')
+                    ->label('Trạng thái')
+                    ->options([
+                        'out' => 'Đã hết',
+                        'low' => 'Sắp hết',
+                        'ok' => 'Còn hàng',
+                    ])
+                    ->query(fn(Builder $query, array $data) => match ($data['value'] ?? null) {
+                        'out' => $query->where('stock', '<=', 0),
+                        'low' => $query->whereColumn('stock', '<=', 'threshold')->where('stock', '>', 0),
+                        'ok' => $query->whereColumn('stock', '>', 'threshold'),
+                        default => $query,
+                    }),
+
+                Filter::make('low_stock')
+                    ->label('Tồn kho thấp hơn')
+                    ->form([
+                        TextInput::make('threshold')
+                            ->label('Tồn kho thấp hơn')
+                            ->numeric()
+                            ->placeholder('VD: 10'),
+                    ])
+                    ->query(fn(Builder $query, array $data) => filled($data['threshold'])
+                        ? $query->where('stock', '<', $data['threshold'])
+                        : $query
+                    )
+                    ->indicateUsing(fn(array $data) => filled($data['threshold']) ? 'Tồn kho < ' . $data['threshold'] : null
+                    ),
             ])
             ->recordActions([
                 EditAction::make(),
