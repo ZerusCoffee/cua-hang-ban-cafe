@@ -28,8 +28,8 @@ class SendOrderNotifications implements ShouldQueue
         $admins = User::role(['super_admin'])->get();
 
         foreach ($admins as $admin) {
-            $admin->notify(new NewOrderDatabaseNotification($event->order));
             $admin->notify(new NewOrderBroadcastNotification($event->order));
+            $admin->notify(new NewOrderDatabaseNotification($event->order));
         }
     }
 }

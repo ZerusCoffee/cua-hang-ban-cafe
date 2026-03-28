@@ -13,7 +13,6 @@ use Filament\Forms\Components\DatePicker;
 
 class StockLookupWidget extends TableWidget
 {
-    use HasWidgetShield;
     protected static ?string $heading = 'Tra cứu tồn kho theo thời điểm';
 
     protected int|string|array $columnSpan = 'full';
