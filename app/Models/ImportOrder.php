@@ -77,7 +77,6 @@ class ImportOrder extends Model
                 $newQuantity = $detail->quantity;
                 $newCost = $detail->unit_price;
 
-                // Tính giá bình quân
                 if ($currentStock > 0) {
                     $averageCost = (
                             ($currentStock * $currentCost)
@@ -87,18 +86,13 @@ class ImportOrder extends Model
                     $averageCost = $newCost;
                 }
 
-                // KHÔNG LÀM TRÒN THEO NGHÌN NỮA VÌ CÓ NHỮNG NGUYÊN LIỆU ĐƠN VỊ LÀ GRAM/ML GIÁ RẤT NHỎ
-                // NẾU LÀM TRÒN (averageCost / 1000) * 1000 SẼ BỊ VỀ 0.
-                // CHỈ LÀM TRÒN LÊN 2 CHỮ SỐ THẬP PHÂN NẾU CẦN
                 $averageCost = round($averageCost, 2);
 
-                // Update nguyên liệu
                 $ingredient->update([
                     'stock' => $currentStock + $newQuantity,
                     'cost_price' => $averageCost,
                 ]);
 
-                // Ghi log nhập kho + biến động giá
                 IngredientImportLog::create([
                     'ingredient_id' => $ingredient->id,
                     'import_order_id' => $this->id,
@@ -115,7 +109,6 @@ class ImportOrder extends Model
 
             $this->update([
                 'status' => 'completed',
-                'imported_at' => $importAt,
             ]);
         });
     }

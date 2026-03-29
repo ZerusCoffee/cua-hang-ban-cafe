@@ -3,13 +3,11 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Ingredient;
-use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Actions\Action;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Widgets\TableWidget;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Forms\Components\DatePicker;
 
 class StockLookupWidget extends TableWidget
 {
@@ -22,6 +20,18 @@ class StockLookupWidget extends TableWidget
     public function mount(): void
     {
         $this->lookupDate = now()->format('Y-m-d');
+    }
+
+    protected function getListeners(): array
+    {
+        return [
+            'updateDate' => 'setLookupDate',
+        ];
+    }
+
+    public function setLookupDate($date)
+    {
+        $this->lookupDate = $date;
     }
 
     public function table(Table $table): Table
@@ -91,29 +101,10 @@ class StockLookupWidget extends TableWidget
                     ->relationship('unit', 'name'),
             ])
             ->headerActions([
-                Action::make('set_lookup_date')
-                    ->label('Chọn ngày')
-                    ->icon('heroicon-o-calendar')
-                    ->form([
-                        DatePicker::make('lookup_date')
-                            ->label('Ngày tra cứu')
-                            ->required()
-                            ->default(now())
-                            ->maxDate(now())
-                            ->native(false)
-                            ->displayFormat('d/m/Y'),
-                    ])
-                    ->action(function (array $data) {
-                        $this->lookupDate = $data['lookup_date'];
-                    }),
-
-                Action::make('reset_date')
-                    ->label('Hôm nay')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('gray')
-                    ->action(function () {
-                        $this->lookupDate = now()->format('Y-m-d');
-                    }),
+                Action::make('date_picker')
+                    ->label('')
+                    ->extraAttributes(['class' => 'p-0'])
+                    ->view('filament.widgets.date-picker'),
             ])
             ->defaultSort('name');
     }
