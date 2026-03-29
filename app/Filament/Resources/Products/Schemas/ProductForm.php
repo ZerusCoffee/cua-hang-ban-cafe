@@ -87,8 +87,9 @@ class ProductForm
                                 ->rows(3)
                                 ->nullable(),
 
-                            RichEditor::make('description')
+                            Textarea::make('description')
                                 ->label('Mô tả chi tiết')
+                                ->rows(8)
                                 ->nullable()
                                 ->columnSpanFull(),
 
@@ -280,7 +281,7 @@ class ProductForm
                                         $profitPercent = round(($profit / $totalCost) * 100, 1);
                                         $component->state(number_format($profit) . 'đ (' . $profitPercent . '%)');
                                     } else {
-                                        $component->state('Chưa có nguyên liệu');
+                                        $component->state('0');
                                     }
                                 }),
                         ])
@@ -394,11 +395,10 @@ class ProductForm
         return round($total, 2);
     }
 
-    private static function calculateSuggestedPrice(float $totalCost, float $profitRate): int
+    private static function calculateSuggestedPrice(float $totalCost, float $profitRate): float
     {
         if ($totalCost <= 0) return 0;
-        $price = $totalCost * (1 + $profitRate / 100);
-        return intval(ceil($price / 1000) * 1000);
+        return round($totalCost * (1 + $profitRate / 100), 2);
     }
 
     private static function updateAllDisplays(Set $set, Livewire $livewire): void
@@ -421,7 +421,7 @@ class ProductForm
             $profitPercent = round(($profit / $totalCost) * 100, 1);
             $set('profit_calculation_display', number_format($profit) . 'đ (' . $profitPercent . '%)');
         } else {
-            $set('profit_calculation_display', 'Chưa có nguyên liệu');
+            $set('profit_calculation_display', '0');
         }
 
         if (property_exists($livewire, 'data')) {

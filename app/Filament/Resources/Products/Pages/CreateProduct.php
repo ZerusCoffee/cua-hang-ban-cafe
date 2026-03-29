@@ -44,7 +44,7 @@ class CreateProduct extends CreateRecord
         $totalCost = round($totalCost, 2);
 
         if ($totalCost > 0) {
-            $suggestedPrice = (int) ceil(($totalCost * (1 + $this->profitRateInput / 100)) / 1000) * 1000;
+            $suggestedPrice = round($totalCost * (1 + $this->profitRateInput / 100), 2);
             $actualProfitRate = round(($suggestedPrice - $totalCost) / $totalCost * 100, 2);
         } else {
             $suggestedPrice = 0;
@@ -53,7 +53,7 @@ class CreateProduct extends CreateRecord
 
         $this->record->update([
             'recommended_price' => $suggestedPrice,
-            'profit_rate'       => $actualProfitRate,
+            'profit_rate'       => $this->profitRateInput,
         ]);
     }
 }
