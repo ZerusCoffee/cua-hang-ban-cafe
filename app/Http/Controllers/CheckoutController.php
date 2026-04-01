@@ -61,16 +61,6 @@ class CheckoutController extends Controller
         return $response;
     }
 
-    /**
-     * GET /api/v1/order/checkout/cancel/{orderNumber}
-     */
-    public function cancel(string $orderNumber): JsonResponse
-    {
-        $this->orderService->cancel($orderNumber);
-
-        return $this->successResponse(null, 'Đã huỷ đơn hàng');
-    }
-
     // ─── Payment callbacks ────────────────────────────────────────────────────
 
     public function vnpayCallback(Request $request): JsonResponse

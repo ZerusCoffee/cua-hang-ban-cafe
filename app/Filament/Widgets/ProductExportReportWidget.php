@@ -16,12 +16,14 @@ use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Filament\Infolists\Components\TextEntry;
+use pxlrbt\FilamentExcel\Actions\ExportAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class ProductExportReportWidget extends TableWidget
 {
     protected static ?string $heading = 'Báo cáo xuất sản phẩm';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public ?string $fromDate = null;
     public ?string $toDate = null;
@@ -297,10 +299,9 @@ class ProductExportReportWidget extends TableWidget
 
                             Section::make('Top 5 sản phẩm bán chạy nhất')
                                 ->schema(
-                                    $topProducts->map(fn($item, $index) =>
-                                        TextEntry::make("top_{$index}")
-                                            ->label($item->product_name)
-                                            ->state(number_format($item->total_qty) . ' sản phẩm')
+                                    $topProducts->map(fn($item, $index) => TextEntry::make("top_{$index}")
+                                        ->label($item->product_name)
+                                        ->state(number_format($item->total_qty) . ' sản phẩm')
                                     )->toArray()
                                 )
                                 ->columns(2)
@@ -311,16 +312,15 @@ class ProductExportReportWidget extends TableWidget
                     ->modalCancelActionLabel('Đóng')
                     ->modalWidth('7xl'),
 
-                Action::make('export')
+                ExportAction::make()
                     ->label('Xuất Excel')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
-                    ->action(function () {
-                        Notification::make()
-                            ->title('Đang xuất báo cáo...')
-                            ->info()
-                            ->send();
-                    }),
+                    ->exports([
+                        ExcelExport::make()
+                            ->fromTable()
+                            ->withFilename(date('Y-m-d') . '-san-pham')
+                    ]),
 
                 Action::make('best_sellers')
                     ->label('Top bán chạy')
@@ -363,10 +363,9 @@ class ProductExportReportWidget extends TableWidget
 
                             Section::make('Chi tiết theo ngày')
                                 ->schema(
-                                    $details->map(fn($item, $index) =>
-                                        TextEntry::make("detail_{$index}")
-                                            ->label(\Carbon\Carbon::parse($item->date)->format('d/m/Y'))
-                                            ->state("SL: {$item->daily_qty} | DT: " . number_format($item->daily_revenue, 0) . "đ | LN: " . number_format($item->daily_profit, 0) . "đ")
+                                    $details->map(fn($item, $index) => TextEntry::make("detail_{$index}")
+                                        ->label(\Carbon\Carbon::parse($item->date)->format('d/m/Y'))
+                                        ->state("SL: {$item->daily_qty} | DT: " . number_format($item->daily_revenue, 0) . "đ | LN: " . number_format($item->daily_profit, 0) . "đ")
                                     )->toArray()
                                 )
                                 ->columns(2),
