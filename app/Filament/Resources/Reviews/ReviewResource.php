@@ -26,7 +26,7 @@ class ReviewResource extends Resource
     protected static string|null|\UnitEnum $navigationGroup = 'Sản phẩm';
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $recordTitleAttribute = 'Review';
+    protected static ?string $recordTitleAttribute = 'comment';
 
     public static function form(Schema $schema): Schema
     {

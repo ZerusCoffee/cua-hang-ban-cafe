@@ -24,6 +24,8 @@ class IngredientResource extends Resource
 
     protected static string|null|\UnitEnum $navigationGroup = 'Danh mục';
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBeaker;
 
     public static function form(Schema $schema): Schema

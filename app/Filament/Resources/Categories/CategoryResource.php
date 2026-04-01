@@ -30,6 +30,8 @@ class CategoryResource extends Resource
 
     protected static string|null|\UnitEnum $navigationGroup = 'Sản phẩm';
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     protected static ?int $navigationSort = 20;
 
     public static function form(Schema $schema): Schema

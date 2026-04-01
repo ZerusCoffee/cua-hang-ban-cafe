@@ -97,7 +97,7 @@ class OrderInfolist
                                 ),
                         ])
                         ->columns(6),
-                ]),
+                ])->columnSpanFull(),
 
             Section::make('Tổng tiền')
                 ->columns(3)

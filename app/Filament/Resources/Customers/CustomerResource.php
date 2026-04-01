@@ -16,6 +16,9 @@ class CustomerResource extends Resource
     protected static ?string $modelLabel = 'Khách hàng';
     protected static ?string $pluralModelLabel = 'Khách hàng';
 
+    protected static ?string $recordTitleAttribute = 'name';
+
+
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedUser;
 
 
@@ -29,7 +32,9 @@ class CustomerResource extends Resource
     public static function getPages(): array
     {
         return [
+
             'index' => Pages\ListCustomers::route('/'),
+            'create' => Pages\CreateCustomer::route('/create'),
             'view' => Pages\ViewCustomer::route('/{record}'),
         ];
     }

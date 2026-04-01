@@ -15,6 +15,7 @@
         "laravel/tinker": "^2.10.1",
         "predis/predis": "*",
         "pusher/pusher-php-server": "*",
+        "pxlrbt/filament-excel": "^3.6",
         "tapp/filament-progress-bar-column": "^1.0"
     },
     "require-dev": {

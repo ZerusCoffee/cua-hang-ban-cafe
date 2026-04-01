@@ -1,14 +1,20 @@
 <?php
-// app/Http/Controllers/OrderController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    public function __construct(
+        private OrderService $orderService,
+    )
+    {
+    }
+
     /**
      * GET /api/v1/order
      * Danh sách đơn hàng của customer đang login
@@ -34,5 +40,15 @@ class OrderController extends Controller
             ->firstOrFail();
 
         return $this->successResponse($order, 'Lấy chi tiết đơn hàng thành công');
+    }
+
+    /**
+     * DELETE /api/v1/order/cancel/{orderNumber}
+     */
+    public function cancel(string $orderNumber): JsonResponse
+    {
+        $this->orderService->cancel($orderNumber);
+
+        return $this->successResponse(null, 'Đã huỷ đơn hàng');
     }
 }

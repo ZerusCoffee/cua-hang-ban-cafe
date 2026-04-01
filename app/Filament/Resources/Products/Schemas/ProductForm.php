@@ -102,35 +102,27 @@ class ProductForm
                                         ->image()
                                         ->required()
                                         ->disk('public')
-                                        ->directory('products'),
+                                        ->directory('products')
+                                        ->columnSpanFull(),
 
                                     TextInput::make('alt_text')
                                         ->label('Alt text')
-                                        ->nullable(),
-
-                                    Toggle::make('is_primary')
-                                        ->label('Ảnh chính')
-                                        ->default(false)
-                                        ->live()
-                                        ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
-                                            if ($state) {
-                                                $images = $livewire->data['images'] ?? [];
-                                                foreach (array_keys($images) as $key) {
-                                                    $livewire->data['images'][$key]['is_primary'] = false;
-                                                }
-                                                $currentPath = $get('image_path');
-                                                foreach (array_keys($images) as $key) {
-                                                    if ($livewire->data['images'][$key]['image_path'] === $currentPath) {
-                                                        $livewire->data['images'][$key]['is_primary'] = true;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }),
+                                        ->nullable()
+                                        ->columnSpanFull(),
                                 ])
-                                ->columns(3)
+                                ->columns(1)
                                 ->addActionLabel('Thêm ảnh')
+                                ->reorderable()
                                 ->collapsible()
+                                ->live()
+                                ->afterStateUpdated(function ($livewire) {
+                                    $images = $livewire->data['images'] ?? [];
+                                    $keys   = array_keys($images);
+                                    foreach ($keys as $i => $key) {
+                                        $livewire->data['images'][$key]['is_primary'] = ($i === 0);
+                                    }
+                                })
+                                ->helperText('Ảnh đầu tiên sẽ tự động là ảnh chính. Kéo thả để thay đổi thứ tự.')
                                 ->columnSpanFull(),
                         ])
                         ->columns(2),
