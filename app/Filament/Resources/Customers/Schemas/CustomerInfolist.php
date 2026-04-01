@@ -20,6 +20,7 @@ class CustomerInfolist
                     ImageEntry::make('avatar')
                         ->label('Ảnh đại diện')
                         ->circular()
+                        ->disk('public')
                         ->defaultImageUrl(fn($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name))
                         ->columnSpan(1),
 
@@ -49,10 +50,9 @@ class CustomerInfolist
 
                     TextEntry::make('email_verified_at')
                         ->label('Xác thực email')
-                        ->getStateUsing(fn($record) =>
-                            $record->email_verified_at
-                                ? $record->email_verified_at->format('d/m/Y H:i')
-                                : 'Chưa xác thực'
+                        ->getStateUsing(fn($record) => $record->email_verified_at
+                            ? $record->email_verified_at->format('d/m/Y H:i')
+                            : 'Chưa xác thực'
                         ),
 
                     TextEntry::make('created_at')
@@ -69,16 +69,14 @@ class CustomerInfolist
 
                     TextEntry::make('orders_total')
                         ->label('Tổng chi tiêu')
-                        ->getStateUsing(fn($record) =>
-                            number_format($record->orders()->sum('total'), 0, ',', '.') . ' ₫'
+                        ->getStateUsing(fn($record) => number_format($record->orders()->sum('total'), 0, ',', '.') . ' ₫'
                         ),
 
                     TextEntry::make('last_order_at')
                         ->label('Đơn gần nhất')
-                        ->getStateUsing(fn($record) =>
-                            $record->orders()->latest()->value('created_at')
-                                ? \Carbon\Carbon::parse($record->orders()->latest()->value('created_at'))->format('d/m/Y H:i')
-                                : '—'
+                        ->getStateUsing(fn($record) => $record->orders()->latest()->value('created_at')
+                            ? \Carbon\Carbon::parse($record->orders()->latest()->value('created_at'))->format('d/m/Y H:i')
+                            : '—'
                         ),
                 ]),
         ]);

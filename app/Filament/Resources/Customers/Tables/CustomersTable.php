@@ -21,6 +21,7 @@ class CustomersTable
                 ImageColumn::make('avatar')
                     ->label('')
                     ->circular()
+                    ->disk('public')
                     ->defaultImageUrl(fn($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name)),
 
                 TextColumn::make('name')

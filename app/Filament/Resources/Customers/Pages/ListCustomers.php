@@ -12,6 +12,14 @@ class ListCustomers extends ListRecords
 {
     protected static string $resource = CustomerResource::class;
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            CreateAction::make()
+                ->label('Thêm khách hàng'),
+        ];
+    }
+
     public function table(Table $table): Table
     {
         return CustomersTable::configure($table);
