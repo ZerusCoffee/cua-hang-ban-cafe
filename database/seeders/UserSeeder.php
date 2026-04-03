@@ -48,7 +48,7 @@ class UserSeeder extends Seeder
                     'avatar'            => null,
                 ]
             );
-            $user->syncRoles($data['role']);
+            $user->assignRole($data['role']);
         }
 
         // Tạo user ngẫu nhiên theo từng role
