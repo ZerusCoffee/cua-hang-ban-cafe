@@ -14,7 +14,7 @@ class CategorySeeder extends Seeder
             ['name' => 'Đồ Uống', 'slug' => 'do-uong'],
             ['name' => 'Bánh', 'slug' => 'banh'],
             ['name' => 'Snack', 'slug' => 'snack'],
-            ['name' => 'Dessert', 'slug' => 'dessert'],
+            ['name' => 'Khác', 'slug' => 'khac']
         ];
         foreach ($categories as $category) {
             Category::firstOrCreate(
