@@ -17,10 +17,17 @@ class OptionGroup extends Model
     ];
 
     protected $casts = [
-        'min'         => 'integer',
-        'max'         => 'integer',
+        'min' => 'integer',
+        'max' => 'integer',
         'is_required' => 'boolean',
     ];
+
+    protected static function booted()
+    {
+        static::saving(function ($model) {
+            $model->is_required = $model->min > 0;
+        });
+    }
 
     public function options(): HasMany
     {

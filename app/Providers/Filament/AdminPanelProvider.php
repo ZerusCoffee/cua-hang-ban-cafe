@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\ProductExportReportPage;
+use App\Filament\Pages\ProductImportBatchPricePage;
 use App\Filament\Pages\WarehousePage;
 use App\Filament\Widgets\CafeStatsOverview;
 use App\Filament\Widgets\RevenueChartWidget;
@@ -43,7 +44,8 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
                 WarehousePage::class,
-                ProductExportReportPage::class
+                ProductExportReportPage::class,
+                ProductImportBatchPricePage::class
             ])
             ->widgets([
                 CafeStatsOverview::class,
@@ -72,15 +74,16 @@ class AdminPanelProvider extends PanelProvider
                     ->navigationSort(99)
                     ->gridColumns([
                         'default' => 1,
-                        'sm'      => 2,
-                        'lg'      => 3,
+                        'sm' => 2,
+                        'lg' => 3,
                     ])
                     ->checkboxListColumns([
                         'default' => 1,
-                        'sm'      => 2,
-                        'lg'      => 4,
+                        'sm' => 2,
+                        'lg' => 4,
                     ]),
             ])
+            ->profile(isSimple: false)
             ->broadcasting()
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s');

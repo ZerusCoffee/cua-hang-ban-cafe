@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Table;
@@ -10,6 +11,7 @@ use App\Models\IngredientImportLog;
 
 class RecentImportsWidget extends TableWidget
 {
+    use HasWidgetShield;
     protected static ?string $heading = 'Nhập hàng gần đây';
 
     protected static ?int $sort = 3;

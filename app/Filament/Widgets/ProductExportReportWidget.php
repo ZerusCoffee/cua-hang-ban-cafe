@@ -28,6 +28,7 @@ class ProductExportReportWidget extends TableWidget
     public ?string $fromDate = null;
     public ?string $toDate = null;
     public ?int $selectedProductId = null;
+    public static bool $isLazy = false;
 
     public function mount(): void
     {
