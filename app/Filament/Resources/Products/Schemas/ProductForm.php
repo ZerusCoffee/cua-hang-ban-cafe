@@ -4,10 +4,8 @@ namespace App\Filament\Resources\Products\Schemas;
 
 use App\Models\Ingredient;
 use App\Models\Option;
-use App\Models\OptionGroup;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;

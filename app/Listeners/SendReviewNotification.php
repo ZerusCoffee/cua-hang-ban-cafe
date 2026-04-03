@@ -24,10 +24,9 @@ class SendReviewNotification implements ShouldQueue
      */
     public function handle(object $event): void
     {
-         $admins = User::role(['super_admin'])->get();
+         $admins = User::role(['super_admin', 'manager', 'sales'])->get();
 
         foreach ($admins as $admin) {
-            $admin->notify(new NewReviewDatabaseNotification($event->review));
             $admin->notify(new NewReviewBroadcastNotification($event->review));
         }
     }

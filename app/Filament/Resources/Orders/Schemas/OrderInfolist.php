@@ -110,7 +110,7 @@ class OrderInfolist
                         ->label('Tổng thanh toán')
                         ->money('VND')
                         ->weight(FontWeight::Bold),
-                ]),
+                ])->columnSpanFull(),
 
             Section::make('Log lợi nhuận')
                 ->visible(fn($record) => in_array($record->status, ['confirmed', 'delivered']))
@@ -130,7 +130,7 @@ class OrderInfolist
                                 ->dateTime('d/m/Y H:i'),
                         ])
                         ->columns(8),
-                ]),
+                ])->columnSpanFull(),
 
             Section::make('Lịch sử trạng thái')
                 ->schema([
@@ -145,7 +145,7 @@ class OrderInfolist
                                 ->dateTime('d/m/Y H:i'),
                         ])
                         ->columns(4),
-                ]),
+                ])->columnSpanFull(),
         ]);
     }
 }

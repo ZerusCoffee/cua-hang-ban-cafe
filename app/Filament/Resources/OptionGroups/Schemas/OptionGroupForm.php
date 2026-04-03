@@ -5,7 +5,6 @@ namespace App\Filament\Resources\OptionGroups\Schemas;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -33,17 +32,23 @@ class OptionGroupForm
                             ->required()
                             ->default('single'),
 
-                        Toggle::make('is_required')
-                            ->label('Bắt buộc chọn')
-                            ->default(false),
-
                         TextInput::make('min')
                             ->label('Chọn tối thiểu')
                             ->numeric()
                             ->default(0)
                             ->minValue(0)
                             ->maxValue(100)
-                            ->helperText('0 = không bắt buộc'),
+                            ->helperText('0 = không bắt buộc')
+                            ->rules([
+                                function ($get) {
+                                    return function ($attribute, $value, $fail) use ($get) {
+                                        if ($value > $get('max')) {
+                                            $fail('Chọn tối thiểu không được lớn hơn chọn tối đa.');
+                                        }
+                                    };
+                                }
+                            ])
+                            ->reactive(),
 
                         TextInput::make('max')
                             ->label('Chọn tối đa')
@@ -51,7 +56,17 @@ class OptionGroupForm
                             ->default(1)
                             ->minValue(1)
                             ->maxValue(100)
-                            ->helperText('Số lượng tối đa được chọn'),
+                            ->rules([
+                                function ($get) {
+                                    return function ($attribute, $value, $fail) use ($get) {
+                                        if ($value < $get('min')) {
+                                            $fail('Chọn tối đa không được nhỏ hơn chọn tối thiểu.');
+                                        }
+                                    };
+                                }
+                            ])
+                            ->helperText('Số lượng tối đa được chọn')
+                            ->reactive(),
                     ]),
 
                 Section::make('Các giá trị tùy chọn')
