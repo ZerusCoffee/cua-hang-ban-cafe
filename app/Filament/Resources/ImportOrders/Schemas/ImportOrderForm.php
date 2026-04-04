@@ -80,7 +80,7 @@ class ImportOrderForm
                             ->label('Số lượng')
                             ->required()
                             ->numeric()
-                            ->minValue(0)
+                            ->minValue(1)
                             ->live()
                             ->afterStateUpdated(fn($state, callable $get, callable $set) => $set('total_price', number_format($state * $get('unit_price'), 0, '.', ','))
                             ),
@@ -90,7 +90,7 @@ class ImportOrderForm
                             ->required()
                             ->numeric()
                             ->suffix('₫')
-                            ->minValue(0)
+                            ->minValue(1)
                             ->live()
                             ->afterStateUpdated(fn($state, callable $get, callable $set) => $set('total_price', number_format($state * $get('quantity'), 0, '.', ','))
                             ),

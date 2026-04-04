@@ -3,9 +3,11 @@
 namespace App\Observers;
 
 use App\Events\OrderStatusUpdated;
+use App\Jobs\RecalculateProductStock;
 use App\Models\Ingredient;
 use App\Models\Order;
 use App\Models\OrderProfitLog;
+use App\Models\Product;
 use App\Models\ProductOptionModifier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -84,10 +86,12 @@ class OrderObserver
             }
         }
 
+        RecalculateProductStock::dispatchSync(null);
+
         Log::info("OrderObserver: Đã trừ nguyên liệu cho đơn #{$order->order_number}");
     }
 
-     /**
+    /**
      * Tạo profit log cho từng item khi đơn confirmed
      */
     protected function createProfitLogs(Order $order): void
@@ -95,33 +99,33 @@ class OrderObserver
         $order->load('items.product');
 
         foreach ($order->items as $item) {
-            $unitCost  = $item->calculateUnitCost();
+            $unitCost = $item->calculateUnitCost();
             $unitPrice = floatval($item->price);
             $unitProfit = $unitPrice - $unitCost;
             $totalPrice = $unitPrice * $item->quantity;
-            $totalCost  = $unitCost  * $item->quantity;
+            $totalCost = $unitCost * $item->quantity;
             $totalProfit = $unitProfit * $item->quantity;
             $profitMargin = $unitCost > 0
                 ? round(($unitProfit / $unitCost) * 100, 2)
                 : 0;
 
             OrderProfitLog::create([
-                'order_id'         => $order->id,
-                'order_item_id'    => $item->id,
-                'product_id'       => $item->product_id,
-                'product_name'     => $item->product_name,
-                'product_sku'      => $item->product_sku,
-                'quantity'         => $item->quantity,
-                'unit_price'       => $unitPrice,
-                'unit_cost'        => $unitCost,
-                'unit_profit'      => $unitProfit,
-                'total_price'      => $totalPrice,
-                'total_cost'       => $totalCost,
-                'total_profit'     => $totalProfit,
-                'profit_margin'    => $profitMargin,
+                'order_id' => $order->id,
+                'order_item_id' => $item->id,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product_name,
+                'product_sku' => $item->product_sku,
+                'quantity' => $item->quantity,
+                'unit_price' => $unitPrice,
+                'unit_cost' => $unitCost,
+                'unit_profit' => $unitProfit,
+                'total_price' => $totalPrice,
+                'total_cost' => $totalCost,
+                'total_profit' => $totalProfit,
+                'profit_margin' => $profitMargin,
                 'options_snapshot' => $item->options,
-                'cost_breakdown'   => $item->getCostBreakdown(),
-                'logged_at'        => now(),
+                'cost_breakdown' => $item->getCostBreakdown(),
+                'logged_at' => now(),
             ]);
         }
 

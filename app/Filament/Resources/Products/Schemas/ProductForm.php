@@ -168,7 +168,7 @@ class ProductForm
                                         ->label('Số lượng')
                                         ->required()
                                         ->numeric()
-                                        ->minValue(0)
+                                        ->minValue(1)
                                         ->step(0.01)
                                         ->live(onBlur: false)
                                         ->afterStateUpdated(function ($state, Set $set, Get $get, Livewire $livewire) {

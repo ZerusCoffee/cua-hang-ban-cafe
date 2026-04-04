@@ -41,6 +41,16 @@ class ImportOrder extends Model
         });
     }
 
+    public function safeDelete(): void
+    {
+        $hasImport = $this->details()->exists();
+        if ($hasImport) {
+            $this->delete(); //softDelete
+        } else {
+            $this->forceDelete(); //delete
+        }
+    }
+
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
@@ -111,5 +121,9 @@ class ImportOrder extends Model
                 'status' => 'completed',
             ]);
         });
+        $products = Product::with('recipeDetails.ingredient')->get();
+        foreach ($products as $product) {
+            ProductStockLog::snapshot($product);
+        }
     }
 }
