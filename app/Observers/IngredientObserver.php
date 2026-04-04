@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Jobs\RecalculateProductPrices;
 use App\Models\Ingredient;
+use App\Models\Product;
 
 class IngredientObserver
 {
@@ -24,11 +25,19 @@ class IngredientObserver
     public function updated(Ingredient $ingredient): void
     {
         if ($ingredient->wasChanged('cost_price')) {
-            // Sử dụng queue để xử lý bất đồng bộ
             $oldCostPrice = $ingredient->getOriginal('cost_price');
-            RecalculateProductPrices::dispatch($ingredient, $oldCostPrice);
+            RecalculateProductPrices::dispatchSync($ingredient, $oldCostPrice);
         }
     }
 
+    public function deleting(Ingredient $ingredient): void
+    {
+        $productIds = $ingredient->recipeDetails()
+            ->pluck('product_id')
+            ->unique()
+            ->filter();
+
+        Product::whereIn('id', $productIds)->update(['is_active' => false]);
+    }
 
 }

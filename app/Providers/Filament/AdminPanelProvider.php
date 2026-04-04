@@ -2,9 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\ImportStatsPage;
 use App\Filament\Pages\ProductExportReportPage;
 use App\Filament\Pages\ProductImportBatchPricePage;
-use App\Filament\Pages\WarehousePage;
+use App\Filament\Pages\IngredientStockLookupPage;
+use App\Filament\Pages\ProductStockLookUpPage;
 use App\Filament\Widgets\CafeStatsOverview;
 use App\Filament\Widgets\RevenueChartWidget;
 use App\Filament\Widgets\RecentImportsWidget;
@@ -43,7 +45,9 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
-                WarehousePage::class,
+                IngredientStockLookupPage::class,
+                ProductStockLookUpPage::class,
+                ImportStatsPage::class,
                 ProductExportReportPage::class,
                 ProductImportBatchPricePage::class
             ])

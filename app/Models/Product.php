@@ -41,10 +41,10 @@ class Product extends Model
 
     protected $casts = [
         'recommended_price' => 'decimal:2',
-        'profit_rate'       => 'decimal:2',
-        'is_active'         => 'boolean',
-        'is_featured'       => 'boolean',
-        'view_count'        => 'integer',
+        'profit_rate' => 'decimal:2',
+        'is_active' => 'boolean',
+        'is_featured' => 'boolean',
+        'view_count' => 'integer',
     ];
 
     #[Scope]
@@ -138,6 +138,16 @@ class Product extends Model
             ->withTimestamps();
     }
 
+    public function stockLogs(): HasMany
+    {
+        return $this->hasMany(ProductStockLog::class);
+    }
+
+    public function latestStockLog(): HasOne
+    {
+        return $this->hasOne(ProductStockLog::class)->latestOfMany('logged_at');
+    }
+
     public function getOptionPrice(int $optionId): float
     {
         return $this->productOptions()
@@ -152,12 +162,12 @@ class Product extends Model
             $groupName = $productOption->option->group->name;
             if (!isset($result[$groupName])) {
                 $result[$groupName] = [
-                    'group'   => $productOption->option->group,
+                    'group' => $productOption->option->group,
                     'options' => [],
                 ];
             }
             $result[$groupName]['options'][] = [
-                'id'    => $productOption->option_id,
+                'id' => $productOption->option_id,
                 'value' => $productOption->option->value,
                 'price' => $productOption->additional_price,
             ];
