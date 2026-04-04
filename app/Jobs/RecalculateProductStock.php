@@ -31,6 +31,7 @@ class RecalculateProductStock implements ShouldQueue
     public function handle(): void
     {
         try {
+            Log::info("Gọi handle job product stock rồi");
             if ($this->product) {
                 $log = ProductStockLog::snapshot($this->product);
                 Log::info("StockLog: [{$this->product->name}] có thể bán {$log->max_quantity} sp lúc {$log->logged_at}");

@@ -7,13 +7,15 @@ use App\Models\RecipeDetail;
 
 class RecipeDetailObserver
 {
+    public $afterCommit = true;
+
     public function saved(RecipeDetail $detail): void
     {
-        RecalculateProductStock::dispatch($detail->product);
+        RecalculateProductStock::dispatchSync($detail->product);
     }
 
     public function deleted(RecipeDetail $detail): void
     {
-        RecalculateProductStock::dispatch($detail->product);
+        RecalculateProductStock::dispatchSync($detail->product);
     }
 }

@@ -27,7 +27,6 @@ class RecalculateProductPrices implements ShouldQueue
     public function handle(): void
     {
         try {
-            // Tìm thẳng products qua recipe_details.product_id (không qua recipes nữa)
             $products = Product::whereHas('recipeDetails', function ($query) {
                 $query->where('ingredient_id', $this->ingredient->id);
             })->with('recipeDetails.ingredient')->get();

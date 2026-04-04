@@ -86,10 +86,7 @@ class OrderObserver
             }
         }
 
-        $productIds = $order->items->pluck('product_id')->unique()->filter();
-        Product::whereIn('id', $productIds)->each(function ($product) {
-            RecalculateProductStock::dispatch($product);
-        });
+        RecalculateProductStock::dispatchSync(null);
 
         Log::info("OrderObserver: Đã trừ nguyên liệu cho đơn #{$order->order_number}");
     }

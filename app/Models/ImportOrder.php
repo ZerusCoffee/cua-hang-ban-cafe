@@ -121,5 +121,9 @@ class ImportOrder extends Model
                 'status' => 'completed',
             ]);
         });
+        $products = Product::with('recipeDetails.ingredient')->get();
+        foreach ($products as $product) {
+            ProductStockLog::snapshot($product);
+        }
     }
 }
