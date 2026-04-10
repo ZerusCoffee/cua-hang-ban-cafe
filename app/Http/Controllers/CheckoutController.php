@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\OrderCreated;
 use App\Http\Requests\CheckoutRequest;
+use App\Jobs\CancelExpiredOrders;
 use App\Services\CartService;
 use App\Services\OrderService;
 use App\Services\Payment\CodPaymentService;
@@ -47,6 +48,9 @@ class CheckoutController extends Controller
             customerId: $userId,
             data: $request->validated(),
         );
+
+        CancelExpiredOrders::dispatch($order->id)
+            ->delay(now()->addMinutes(20)); // tự động hủy sau 20p nếu k xác nhận
 
         event(new OrderCreated($order)); //notification server
 
