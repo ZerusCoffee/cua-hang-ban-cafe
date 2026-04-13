@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Categories\Tables;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
 class CategoriesTable
@@ -40,7 +41,8 @@ class CategoriesTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([])
+            ->filters([TrashedFilter::make(),
+            ])
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),
