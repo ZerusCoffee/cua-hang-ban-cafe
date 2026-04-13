@@ -4,7 +4,6 @@ namespace App\Listeners;
 
 use App\Events\OrderCreated;
 use App\Models\User;
-use App\Notifications\NewOrderBroadcastNotification;
 use App\Notifications\NewOrderDatabaseNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;

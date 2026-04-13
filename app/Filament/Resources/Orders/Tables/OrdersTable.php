@@ -18,6 +18,7 @@ class OrdersTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->poll('5s')
             ->columns([
 
                 TextColumn::make('order_number')
@@ -173,7 +174,7 @@ class OrdersTable
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(fn ($record) =>
-                        in_array($record->status, ['pending', 'confirmed'])
+                        in_array($record->status, ['pending'])
                     )
                     ->requiresConfirmation()
                     ->form([

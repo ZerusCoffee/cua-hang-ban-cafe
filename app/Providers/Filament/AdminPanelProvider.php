@@ -90,6 +90,6 @@ class AdminPanelProvider extends PanelProvider
             ->profile(isSimple: false)
             ->broadcasting()
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s');
+            ->databaseNotificationsPolling('10s');
     }
 }
