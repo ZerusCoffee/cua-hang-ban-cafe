@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/', [CheckoutController::class, 'checkout']);
     Route::delete('/cancel/{orderNumber}', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+    Route::post('/paypal/create-order', [CheckoutController::class, 'createPaypalOrder']);
+    Route::post('/paypal/capture-order', [CheckoutController::class, 'capturePaypalOrder']);
 });
 
 Route::prefix('callback')->group(function () {

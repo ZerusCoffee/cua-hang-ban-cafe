@@ -92,6 +92,53 @@ class CheckoutController extends Controller
         return app(PaypalPaymentService::class)->callback($request);
     }
 
+    /**
+     * Tạo đơn hàng + PayPal order ID (cho popup)
+     */
+    public function createPaypalOrder(Request $request): JsonResponse
+    {
+        $userId = $request->user()->id;
+        $cart = $this->cartService->get($userId);
+
+        if (empty($cart)) {
+            return $this->errorResponse('Giỏ hàng trống', 422);
+        }
+
+        $stockErrors = $this->cartService->checkStock($userId);
+        if (!empty($stockErrors)) {
+            return $this->errorResponse('Không đủ nguyên liệu', 422, ['stock_errors' => $stockErrors]);
+        }
+
+        // Tạo order với các thông tin giao hàng & ghi chú từ request
+        $order = $this->orderService->createFromCart(
+            cart: $cart,
+            customerId: $userId,
+            data: $request->only([
+                'shipping_full_name',
+                'shipping_phone',
+                'shipping_province',
+                'shipping_ward',
+                'shipping_address_details',
+                'customer_notes',
+                'payment_method'
+            ]),
+        );
+
+        CancelExpiredOrders::dispatch($order->id)->delay(now()->addMinutes(20));
+        event(new OrderCreated($order));
+
+        // Gọi PayPal service để tạo order ID (service đã có handle() trả về order_id)
+        return app(PaypalPaymentService::class)->handle($order, $request->all());
+    }
+
+    /**
+     * Capture PayPal order sau khi người dùng approve
+     */
+    public function capturePaypalOrder(Request $request): JsonResponse
+    {
+        return app(PaypalPaymentService::class)->captureOrder($request);
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private function resolvePaymentService(string $method): mixed
