@@ -7,6 +7,7 @@ use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class PaypalPaymentService implements PaymentServiceInterface
 {
@@ -80,6 +81,15 @@ class PaypalPaymentService implements PaymentServiceInterface
 
         $result = $captureResponse->json();
 
+        if (($result['status'] ?? '') !== 'COMPLETED') {
+            Log::channel('daily')->error('PayPal capture failed', [
+                'order_number' => $referenceId,
+                'paypal_order_id' => $request->order_id,
+                'http_status_code' => $captureResponse->status(),
+                'paypal_response' => $result,
+            ]);
+        }
+
         if (($result['status'] ?? '') === 'COMPLETED') {
             $this->orderService->markPaid($order, $request->order_id, $result);
             $order->updateStatus('confirmed', 'Thanh toán PayPal thành công');
@@ -104,6 +114,8 @@ class PaypalPaymentService implements PaymentServiceInterface
             ->post("{$this->baseUrl}/v2/checkout/orders/{$token}/capture");
 
         $result = $response->json();
+
+
         $order = Order::where('order_number', $orderNumber)->firstOrFail();
 
         if ($result['status'] === 'COMPLETED') {
@@ -114,6 +126,7 @@ class PaypalPaymentService implements PaymentServiceInterface
         }
 
         $order->update(['payment_status' => 'failed']);
+
 
         return response()->json(['status' => 'error'], 400);
     }
