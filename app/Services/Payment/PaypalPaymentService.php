@@ -43,13 +43,12 @@ class PaypalPaymentService implements PaymentServiceInterface
             return response()->json(['status' => 'error', 'message' => 'Không thể tạo thanh toán PayPal'], 400);
         }
 
-        // Lưu order_id vào DB nếu cần
         $order->update(['paypal_order_id' => $result['id']]);
 
         return response()->json([
             'status' => 'success',
             'data' => [
-                'order_id' => $result['id'],   // Frontend sẽ dùng ID này
+                'order_id' => $result['id'],
                 'total' => $order->total,
             ],
         ]);
@@ -58,23 +57,41 @@ class PaypalPaymentService implements PaymentServiceInterface
     public function captureOrder(Request $request): JsonResponse
     {
         $request->validate(['order_id' => 'required|string']);
-
         $accessToken = $this->getAccessToken();
-        $response = Http::withToken($accessToken)
+
+        $orderResponse = Http::withToken($accessToken)
+            ->get("{$this->baseUrl}/v2/checkout/orders/{$request->order_id}");
+
+        if ($orderResponse->failed()) {
+            return response()->json(['status' => 'error', 'message' => 'Không thể lấy thông tin đơn hàng PayPal'], 400);
+        }
+
+        $orderData = $orderResponse->json();
+        $referenceId = $orderData['purchase_units'][0]['reference_id'] ?? null;
+
+        if (!$referenceId) {
+            return response()->json(['status' => 'error', 'message' => 'Không tìm thấy mã đơn hàng trong giao dịch PayPal'], 400);
+        }
+
+        $order = Order::where('order_number', $referenceId)->firstOrFail();
+
+        $captureResponse = Http::withToken($accessToken)
             ->post("{$this->baseUrl}/v2/checkout/orders/{$request->order_id}/capture");
 
-        $result = $response->json();
-        $order = Order::where('paypal_order_id', $request->order_id)->firstOrFail();
+        $result = $captureResponse->json();
 
-        if ($result['status'] === 'COMPLETED') {
+        if (($result['status'] ?? '') === 'COMPLETED') {
             $this->orderService->markPaid($order, $request->order_id, $result);
             $order->updateStatus('confirmed', 'Thanh toán PayPal thành công');
 
-            return response()->json(['status' => 'success']);
+            return response()->json([
+                'status' => 'success',
+                'details' => array_merge($result, ['order_number' => $order->order_number]),
+            ]);
         }
 
         $order->update(['payment_status' => 'failed']);
-        return response()->json(['status' => 'error'], 400);
+        return response()->json(['status' => 'error', 'message' => 'Thanh toán thất bại'], 400);
     }
 
     public function callback(Request $request): JsonResponse
