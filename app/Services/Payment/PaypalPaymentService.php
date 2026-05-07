@@ -16,11 +16,11 @@ class PaypalPaymentService implements PaymentServiceInterface
 
     public function __construct(private OrderService $orderService)
     {
-        $this->baseUrl  = config('payment.paypal.environment') === 'production'
+        $this->baseUrl = config('payment.paypal.environment') === 'production'
             ? 'https://api-m.paypal.com'
             : 'https://api-m.sandbox.paypal.com';
         $this->clientId = config('payment.paypal.client_id');
-        $this->secret   = config('payment.paypal.secret');
+        $this->secret = config('payment.paypal.secret');
     }
 
     public function handle(Order $order, array $data): JsonResponse
@@ -28,40 +28,56 @@ class PaypalPaymentService implements PaymentServiceInterface
         $accessToken = $this->getAccessToken();
 
         $response = Http::withToken($accessToken)->post("{$this->baseUrl}/v2/checkout/orders", [
-            'intent'         => 'CAPTURE',
+            'intent' => 'CAPTURE',
             'purchase_units' => [[
                 'reference_id' => $order->order_number,
-                'amount'       => ['currency_code' => 'VND', 'value' => $order->total],
+                'amount' => ['currency_code' => 'VND', 'value' => $order->total],
             ]],
-            'payment_source' => ['paypal' => ['experience_context' => [
-                'return_url' => route('paypal.callback'),
-                'cancel_url' => route('checkout.cancel', $order->order_number),
-                'user_action' => 'PAY_NOW',
-            ]]],
         ]);
 
-        $result     = $response->json();
-        $approveUrl = collect($result['links'] ?? [])->firstWhere('rel', 'approve')['href'] ?? null;
+        $result = $response->json();
 
-        if (!$approveUrl) {
+        if (!isset($result['id'])) {
             return response()->json(['status' => 'error', 'message' => 'Không thể tạo thanh toán PayPal'], 400);
         }
 
+        // Lưu order_id vào DB nếu cần
+        $order->update(['paypal_order_id' => $result['id']]);
+
         return response()->json([
-            'status'  => 'success',
-            'message' => 'Chuyển hướng đến PayPal',
-            'data'    => [
-                'order_number'   => $order->order_number,
-                'payment_url'    => $approveUrl,
-                'paypal_order_id'=> $result['id'],
-                'total'          => $order->total,
+            'status' => 'success',
+            'data' => [
+                'order_id' => $result['id'],   // Frontend sẽ dùng ID này
+                'total' => $order->total,
             ],
         ]);
     }
 
+    public function captureOrder(Request $request): JsonResponse
+    {
+        $request->validate(['order_id' => 'required|string']);
+
+        $accessToken = $this->getAccessToken();
+        $response = Http::withToken($accessToken)
+            ->post("{$this->baseUrl}/v2/checkout/orders/{$request->order_id}/capture");
+
+        $result = $response->json();
+        $order = Order::where('paypal_order_id', $request->order_id)->firstOrFail();
+
+        if ($result['status'] === 'COMPLETED') {
+            $this->orderService->markPaid($order, $request->order_id, $result);
+            $order->updateStatus('confirmed', 'Thanh toán PayPal thành công');
+
+            return response()->json(['status' => 'success']);
+        }
+
+        $order->update(['payment_status' => 'failed']);
+        return response()->json(['status' => 'error'], 400);
+    }
+
     public function callback(Request $request): JsonResponse
     {
-        $token       = $request->input('token');
+        $token = $request->input('token');
         $orderNumber = $request->input('order_number');
         $accessToken = $this->getAccessToken();
 
@@ -69,7 +85,7 @@ class PaypalPaymentService implements PaymentServiceInterface
             ->post("{$this->baseUrl}/v2/checkout/orders/{$token}/capture");
 
         $result = $response->json();
-        $order  = Order::where('order_number', $orderNumber)->firstOrFail();
+        $order = Order::where('order_number', $orderNumber)->firstOrFail();
 
         if ($result['status'] === 'COMPLETED') {
             $this->orderService->markPaid($order, $token, $result);
