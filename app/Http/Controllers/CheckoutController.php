@@ -127,7 +127,6 @@ class CheckoutController extends Controller
         CancelExpiredOrders::dispatch($order->id)->delay(now()->addMinutes(20));
         event(new OrderCreated($order));
 
-        // Gọi PayPal service để tạo order ID (service đã có handle() trả về order_id)
         return app(PaypalPaymentService::class)->handle($order, $request->all());
     }
 

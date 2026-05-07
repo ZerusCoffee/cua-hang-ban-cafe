@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Models\Order;
+use App\Services\CartService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class PaypalPaymentService implements PaymentServiceInterface
     private string $clientId;
     private string $secret;
 
-    public function __construct(private OrderService $orderService)
+    public function __construct(private OrderService $orderService, private CartService $cartService)
     {
         $this->baseUrl = config('payment.paypal.environment') === 'production'
             ? 'https://api-m.paypal.com'
@@ -94,6 +95,8 @@ class PaypalPaymentService implements PaymentServiceInterface
         if (($result['status'] ?? '') === 'COMPLETED') {
             $this->orderService->markPaid($order, $request->order_id, $result);
             $order->updateStatus('confirmed', 'Thanh toán PayPal thành công');
+
+            $this->cartService->clear($order->customer_id);
 
             return response()->json([
                 'status' => 'success',
