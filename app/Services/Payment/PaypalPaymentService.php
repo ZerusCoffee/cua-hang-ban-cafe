@@ -31,7 +31,9 @@ class PaypalPaymentService implements PaymentServiceInterface
             'intent' => 'CAPTURE',
             'purchase_units' => [[
                 'reference_id' => $order->order_number,
-                'amount' => ['currency_code' => 'VND', 'value' => $order->total],
+                'amount' => [
+                    'currency_code' => 'USD',
+                    'value' => number_format($order->total / 25000, 2, '.', '')],// giả sử tỉ giá 25000
             ]],
         ]);
 
