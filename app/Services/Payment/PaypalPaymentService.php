@@ -77,6 +77,7 @@ class PaypalPaymentService implements PaymentServiceInterface
         $order = Order::where('order_number', $referenceId)->firstOrFail();
 
         $captureResponse = Http::withToken($accessToken)
+            ->withBody('{}', 'application/json')
             ->post("{$this->baseUrl}/v2/checkout/orders/{$request->order_id}/capture");
 
         $result = $captureResponse->json();
