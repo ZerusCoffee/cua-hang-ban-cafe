@@ -12,13 +12,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 
 /**
  * @method static \Illuminate\Database\Eloquent\Builder active()
  */
 class Product extends Model
 {
-    use SoftDeletes, HasFactory;
+    use SoftDeletes, HasFactory, Searchable;
 
     protected $fillable = [
         'category_id',
@@ -62,6 +63,27 @@ class Product extends Model
     public function recipeDetails(): HasMany
     {
         return $this->hasMany(RecipeDetail::class);
+    }
+
+    public function searchableAs(): string
+    {
+        return 'products';
+    }
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'id'                => $this->id,
+            'name'              => $this->name,
+            'slug'              => $this->slug,
+            'description'       => $this->description,
+            'short_description' => $this->short_description,
+            'price'             => (float) $this->recommended_price,
+            'is_active'         => $this->is_active,
+            'is_featured'       => $this->is_featured,
+            'category'          => $this->category?->name,
+            'created_at'        => $this->created_at?->timestamp,
+        ];
     }
 
     public function getCostPriceAttribute(): float
