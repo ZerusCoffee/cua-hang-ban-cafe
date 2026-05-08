@@ -29,4 +29,6 @@ Route::prefix("v1")->group(function () {
     Route::prefix('checkout')->group(base_path('routes/api/checkout.php'));
 
     Route::prefix('review')->group(base_path('routes/api/review.php'));
+
+    Route::prefix('search')->group(base_path('routes/api/search.php'));
 });
