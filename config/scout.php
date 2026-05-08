@@ -1,5 +1,5 @@
 <?php
-
+use App\Models\Product;
 return [
 
     /*
@@ -116,7 +116,7 @@ return [
         'id' => env('ALGOLIA_APP_ID', ''),
         'secret' => env('ALGOLIA_SECRET', ''),
         'index-settings' => [
-            'products' => [
+            Product::class => [
                 'searchableAttributes' => ['name', 'description'],
                 'attributesForFaceting' => ['price'],
                 'typoTolerance' => true,
