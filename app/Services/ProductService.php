@@ -32,7 +32,8 @@ class ProductService
                             'id' => $item->option->id,
                             'productOptionId' => $item->id,
                             'value' => $item->option->value,
-                            'additionalPrice' => $item->additional_price
+                            'additionalPrice' => $item->additional_price,
+                            'default' => $item->option->default,
                         ];
                     })->values()
                 ];
@@ -49,22 +50,22 @@ class ProductService
         ->inRandomOrder()
         ->limit(5) // Giới hạn 5 sản phẩm cùng category
         ->get();
-    
+
     // Nếu chưa đủ 8 sản phẩm, lấy thêm sản phẩm bất kỳ
     if ($relatedProducts->count() < 8) {
         $needCount = 8 - $relatedProducts->count();
-        
+
         $randomProducts = Product::where('id', '!=', $product->id)
             ->whereNotIn('id', $relatedProducts->pluck('id'))
             ->inRandomOrder()
             ->limit($needCount)
             ->get();
-        
+
         $relatedProducts = $relatedProducts->concat($randomProducts);
     }
-    
+
     return $relatedProducts;
-}  
+}
 
     public function attachStockStatus(Collection $products): Collection
     {

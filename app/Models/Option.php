@@ -10,6 +10,11 @@ class Option extends Model
     protected $fillable = [
         'group_id',
         'value',
+        'default'
+    ];
+
+    protected $casts = [
+        'default' => 'boolean'
     ];
 
     public function group(): BelongsTo

@@ -16,7 +16,6 @@ class ProductController extends Controller
     {
     }
 
-
     /**
      * List products
      */
@@ -103,18 +102,18 @@ class ProductController extends Controller
     /**
      * Show product
      */
-public function show(Product $product)
-{
-    // Use the model's newCollection method
-    $products = $product->newCollection([$product]);
+    public function show(Product $product)
+    {
+        // Use the model's newCollection method
+        $products = $product->newCollection([$product]);
 
-    $this->productService->attachStockStatus($products);
+        $this->productService->attachStockStatus($products);
 
-    return $this->successResponse(
-        new ProductDTO($products->first()),
-        "Lấy chi tiết sản phẩm thành công"
-    );
-}
+        return $this->successResponse(
+            new ProductDTO($products->first()),
+            "Lấy chi tiết sản phẩm thành công"
+        );
+    }
 
     public function getByCategory($categoryId)
     {

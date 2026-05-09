@@ -17,7 +17,7 @@ class OptionSeeder extends Seeder
 
         $options = [
             // Size
-            ['group_id' => $sizeGroup->id, 'value' => 'M'],
+            ['group_id' => $sizeGroup->id, 'value' => 'M', 'default' => true],
             ['group_id' => $sizeGroup->id, 'value' => 'L'],
 
             // Mức đường
@@ -25,12 +25,12 @@ class OptionSeeder extends Seeder
             ['group_id' => $sugarGroup->id, 'value' => '30%'],
             ['group_id' => $sugarGroup->id, 'value' => '50%'],
             ['group_id' => $sugarGroup->id, 'value' => '70%'],
-            ['group_id' => $sugarGroup->id, 'value' => '100%'],
+            ['group_id' => $sugarGroup->id, 'value' => '100%', 'default' => true ],
 
             // Mức đá
             ['group_id' => $iceGroup->id, 'value' => 'Không đá'],
             ['group_id' => $iceGroup->id, 'value' => 'Ít đá'],
-            ['group_id' => $iceGroup->id, 'value' => 'Bình thường'],
+            ['group_id' => $iceGroup->id, 'value' => 'Bình thường', 'default' => true ],
 
             // Topping
             ['group_id' => $toppingGroup->id, 'value' => 'Trân châu đen'],
