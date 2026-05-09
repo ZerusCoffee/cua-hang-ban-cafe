@@ -2,8 +2,10 @@
 
 namespace App\Services\Payment;
 
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Services\CartService;
+use App\Services\CouponService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -125,6 +127,25 @@ class VnpayPaymentService implements PaymentServiceInterface
         if ($responseCode === '00') {
             $this->orderService->markPaid($order, $transId, $inputData);
             $order->updateStatus('pending', 'Thanh toán VNPAY thành công qua IPN');
+
+            if ($order->coupon_id) {
+                $coupon = Coupon::find($order->coupon_id);
+                if ($coupon) {
+                    try {
+                        app(CouponService::class)->apply(
+                            $coupon,
+                            $order->customer_id,
+                            $order->id,
+                            $order->discount_amount
+                        );
+                    } catch (\Exception $e) {
+                        Log::error('Lỗi áp dụng coupon PayPal: ' . $e->getMessage(), [
+                            'order' => $order->order_number,
+                            'coupon_id' => $coupon->id,
+                        ]);
+                    }
+                }
+            }
         } else {
             $order->update(['payment_status' => 'failed']);
             Log::info('VNPAY IPN: Payment failed', [

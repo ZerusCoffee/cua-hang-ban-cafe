@@ -2,8 +2,10 @@
 
 namespace App\Services\Payment;
 
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Services\CartService;
+use App\Services\CouponService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -109,6 +111,25 @@ class MomoPaymentService implements PaymentServiceInterface
         if ($resultCode == '0') {
             $this->orderService->markPaid($order, $transId, $request->all());
             $order->updateStatus('pending', 'Thanh toán MOMO thành công');
+
+            if ($order->coupon_id) {
+                $coupon = Coupon::find($order->coupon_id);
+                if ($coupon) {
+                    try {
+                        app(CouponService::class)->apply(
+                            $coupon,
+                            $order->customer_id,
+                            $order->id,
+                            $order->discount_amount
+                        );
+                    } catch (\Exception $e) {
+                        Log::error('Lỗi áp dụng coupon PayPal: ' . $e->getMessage(), [
+                            'order' => $order->order_number,
+                            'coupon_id' => $coupon->id,
+                        ]);
+                    }
+                }
+            }
         } else {
             $order->update(['payment_status' => 'failed']);
         }
