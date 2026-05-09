@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('group_id')->constrained('option_groups')->onDelete('cascade');
             $table->string('value'); // size M, less sugar
+            $table->boolean('default')->default(false);
             $table->timestamps();
         });
     }

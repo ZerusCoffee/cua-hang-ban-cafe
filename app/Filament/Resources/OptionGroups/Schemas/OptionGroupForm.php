@@ -5,6 +5,7 @@ namespace App\Filament\Resources\OptionGroups\Schemas;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -79,11 +80,29 @@ class OptionGroupForm
                                     ->required()
                                     ->maxLength(255)
                                     ->placeholder('VD: M, L, XL / 0%, 30%, 50%...'),
+                                Toggle::make('default')
+                                    ->label('Mặc định')
+                                    ->default(false)
+                                    ->distinct()
+                                    ->fixIndistinctState()
                             ])
                             ->columns(1)
                             ->addActionLabel('+ Thêm giá trị')
                             ->reorderable()
                             ->defaultItems(1)
+                            ->rules([
+                                fn($get) => function ($attribute, $value, $fail) use ($get) {
+                                    $options = $get('options') ?? [];
+                                    $defaultCount = collect($options)
+                                        ->filter(fn($opt) => ($opt['default'] ?? false) === true)
+                                        ->count();
+
+                                    if ($defaultCount === 0) {
+                                        $fail('Vui lòng chọn 1 giá trị mặc định.');
+                                    }
+                                }
+                            ])
+                            ->validationAttribute('các giá trị tùy chọn')
                             ->columnSpanFull()
                     ]),
             ]);
