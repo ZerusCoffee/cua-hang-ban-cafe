@@ -2,8 +2,10 @@
 
 namespace App\Services\Payment;
 
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Services\CartService;
+use App\Services\CouponService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -95,6 +97,25 @@ class PaypalPaymentService implements PaymentServiceInterface
         if (($result['status'] ?? '') === 'COMPLETED') {
             $this->orderService->markPaid($order, $request->order_id, $result);
             $order->updateStatus('confirmed', 'Thanh toán PayPal thành công');
+
+            if ($order->coupon_id) {
+                $coupon = Coupon::find($order->coupon_id);
+                if ($coupon) {
+                    try {
+                        app(CouponService::class)->apply(
+                            $coupon,
+                            $order->customer_id,
+                            $order->id,
+                            $order->discount_amount
+                        );
+                    } catch (\Exception $e) {
+                        Log::error('Lỗi áp dụng coupon PayPal: ' . $e->getMessage(), [
+                            'order' => $order->order_number,
+                            'coupon_id' => $coupon->id,
+                        ]);
+                    }
+                }
+            }
 
             $this->cartService->clear($order->customer_id);
 

@@ -18,25 +18,29 @@ class OrderService
             $items = array_values($cart);
             $subtotal = collect($items)->sum(fn($i) => $i['unit_price'] * $i['quantity']);
 
-            [$coupon, $discountAmount] = $this->resolveCoupon($data['coupon_code'] ?? null, $subtotal);
+            [$coupon, $discountAmount] = $this->resolveCoupon(
+                $data['coupon_code'] ?? null,
+                $customerId,
+                $subtotal
+            );
 
-            $order = Order::create([
-                'customer_id' => $customerId,
-                'coupon_id' => $coupon?->id,
-                'subtotal' => $subtotal,
-                'discount_amount' => $discountAmount,
-                'shipping_fee' => 0,
-                'tax_amount' => 0,
-                'total' => $subtotal - $discountAmount,
-                'shipping_full_name' => $data['shipping_full_name'],
-                'shipping_phone' => $data['shipping_phone'],
-                'shipping_address_details' => $data['shipping_address_details'],
-                'shipping_ward' => $data['shipping_ward'],
-                'shipping_province' => $data['shipping_province'],
-                'payment_method' => $data['payment_method'],
-                'payment_status' => 'pending',
-                'status' => 'pending',
-                'customer_notes' => $data['customer_notes'] ?? null,
+             $order = Order::create([
+                'customer_id'            => $customerId,
+                'coupon_id'              => $coupon?->id,
+                'subtotal'               => $subtotal,
+                'discount_amount'        => $discountAmount,
+                'shipping_fee'           => 0,
+                'tax_amount'             => 0,
+                'total'                  => $subtotal - $discountAmount,
+                'shipping_full_name'     => $data['shipping_full_name'],
+                'shipping_phone'         => $data['shipping_phone'],
+                'shipping_address_details'=> $data['shipping_address_details'],
+                'shipping_ward'          => $data['shipping_ward'],
+                'shipping_province'      => $data['shipping_province'],
+                'payment_method'         => $data['payment_method'],
+                'payment_status'         => 'pending',
+                'status'                 => 'pending',
+                'customer_notes'         => $data['customer_notes'] ?? null,
             ]);
 
             foreach ($items as $item) {
@@ -61,7 +65,6 @@ class OrderService
         $order->update([
             'payment_status' => 'paid',
             'payment_ref' => $transactionId,
-            'payment_data' => $paymentData,
         ]);
 
         return $order;
@@ -73,21 +76,18 @@ class OrderService
         $order->updateStatus('cancelled', 'Khách hàng huỷ đơn');
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
-
-    private function resolveCoupon(?string $code, float $subtotal): array
+    private function resolveCoupon(?string $code, int $customerId, float $subtotal): array
     {
-        if (!$code) return [null, 0];
+        if (!$code) {
+            return [null, 0];
+        }
 
-        $coupon = Coupon::where('code', $code)
-            ->where('is_active', true)
-            ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
-            ->firstOrFail();
+        $result = app(CouponService::class)->validate($code, $customerId, $subtotal);
 
-        $discount = $coupon->type === 'percent'
-            ? round($subtotal * $coupon->value / 100, 2)
-            : floatval($coupon->value);
+        if (!$result['valid']) {
+            throw new \Exception($result['message']);
+        }
 
-        return [$coupon, min($discount, $subtotal)];
+        return [$result['coupon'], $result['discount_amount']];
     }
 }

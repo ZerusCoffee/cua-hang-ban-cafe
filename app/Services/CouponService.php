@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class CouponService
 {
     /**
-     * Validate coupon có thể dùng được không
+     * Validate coupon có thể dùng được không.
      * Trả về ['valid' => true/false, 'message' => '...', 'coupon' => Coupon|null]
      */
     public function validate(string $code, int $customerId, float $orderAmount): array
@@ -60,49 +60,50 @@ class CouponService
     }
 
     /**
-     * Apply coupon vào order — ghi usage + tăng used_count
+     * Apply coupon vào order – ghi usage + tăng used_count.
+     * (Có transaction + lock để tránh race condition)
      */
     public function apply(Coupon $coupon, int $customerId, int $orderId, float $orderAmount): CouponUsage
     {
         return DB::transaction(function () use ($coupon, $customerId, $orderId, $orderAmount) {
-        $lockedCoupon = Coupon::where('id', $coupon->id)->lockForUpdate()->first();
+            $lockedCoupon = Coupon::where('id', $coupon->id)->lockForUpdate()->first();
 
-        if (!$lockedCoupon->canBeUsedByCustomer($customerId)) {
-            throw new \Exception('Mã giảm giá không còn khả dụng.');
-        }
-        if ($orderAmount < $lockedCoupon->minimum_order_amount) {
-            $min = number_format($lockedCoupon->minimum_order_amount, 0, ',', '.');
-            throw new \Exception("Đơn hàng tối thiểu {$min}đ để áp dụng mã này.");
-        }
-
-        $discount = $lockedCoupon->calculateDiscount($orderAmount);
-
-        $usage = CouponUsage::create([
-            'coupon_id'       => $lockedCoupon->id,
-            'customer_id'     => $customerId,
-            'order_id'        => $orderId,
-            'discount_amount' => $discount,
-        ]);
-
-        // Atomic increment
-        if ($lockedCoupon->usage_limit) {
-            $affected = Coupon::where('id', $lockedCoupon->id)
-                ->where('used_count', '<', $lockedCoupon->usage_limit)
-                ->increment('used_count');
-
-            if ($affected === 0) {
-                throw new \Exception('Mã giảm giá vừa hết lượt sử dụng.');
+            if (!$lockedCoupon->canBeUsedByCustomer($customerId)) {
+                throw new \Exception('Mã giảm giá không còn khả dụng.');
             }
-        } else {
-            $lockedCoupon->increment('used_count');
-        }
+            if ($orderAmount < $lockedCoupon->minimum_order_amount) {
+                $min = number_format($lockedCoupon->minimum_order_amount, 0, ',', '.');
+                throw new \Exception("Đơn hàng tối thiểu {$min}đ để áp dụng mã này.");
+            }
 
-        return $usage;
-    });
+            $discount = $lockedCoupon->calculateDiscount($orderAmount);
+
+            $usage = CouponUsage::create([
+                'coupon_id'       => $lockedCoupon->id,
+                'customer_id'     => $customerId,
+                'order_id'        => $orderId,
+                'discount_amount' => $discount,
+            ]);
+
+            // Atomic increment
+            if ($lockedCoupon->usage_limit) {
+                $affected = Coupon::where('id', $lockedCoupon->id)
+                    ->where('used_count', '<', $lockedCoupon->usage_limit)
+                    ->increment('used_count');
+
+                if ($affected === 0) {
+                    throw new \Exception('Mã giảm giá vừa hết lượt sử dụng.');
+                }
+            } else {
+                $lockedCoupon->increment('used_count');
+            }
+
+            return $usage;
+        });
     }
 
     /**
-     * Validate + Apply trong 1 bước
+     * Validate + Apply trong 1 bước (dùng cho trường hợp đồng bộ).
      */
     public function validateAndApply(string $code, int $customerId, int $orderId, float $orderAmount): array
     {
@@ -117,10 +118,8 @@ class CouponService
         return array_merge($result, ['usage' => $usage]);
     }
 
-    // ─── Private ──────────────────────────────────────────────────────────────
-
     private function invalid(string $message): array
     {
-        return ['valid' => false, 'message' => $message, 'coupon' => null];
+        return ['valid' => false, 'message' => $message, 'coupon' => null, 'discount_amount' => 0];
     }
 }
