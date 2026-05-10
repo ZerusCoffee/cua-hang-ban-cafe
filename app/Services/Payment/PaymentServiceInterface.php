@@ -18,4 +18,8 @@ interface PaymentServiceInterface
      */
     public function callback(Request $request): JsonResponse;
 
+    /**
+     * Xử lý retry từ cổng thanh toán
+     */
+    public function retry(Order $order): JsonResponse;
 }

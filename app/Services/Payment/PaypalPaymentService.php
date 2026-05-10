@@ -164,4 +164,9 @@ class PaypalPaymentService implements PaymentServiceInterface
 
         return $response->json()['access_token'];
     }
+
+    public function retry(Order $order): JsonResponse
+    {
+        // TODO: Implement retry() method.
+    }
 }
