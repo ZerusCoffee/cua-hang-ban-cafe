@@ -19,31 +19,71 @@ class VnpayPaymentService implements PaymentServiceInterface
 
     public function handle(Order $order, array $data): JsonResponse
     {
+        $vnp_TxnRef = $order->order_number;
+
+        $order->update(['transaction_id' => $vnp_TxnRef]);
+
         $params = [
-            'vnp_TxnRef' => $order->order_number,
-            'vnp_Amount' => $order->total * 100,
-            'vnp_Locale' => 'vn',
-            'vnp_IpAddr' => request()->ip(),
-            'vnp_ReturnUrl' => env("PUBLIC_CLIENT_URL") . '/payment/vnpay/callback',
-            'vnp_CreateDate' => now()->format('YmdHis'),
-            'vnp_CurrCode' => 'VND',
-            'vnp_Command' => 'pay',
             'vnp_Version' => '2.1.0',
+            'vnp_Command' => 'pay',
             'vnp_TmnCode' => config('payment.vnpay.tmn_code'),
+            'vnp_Amount' => $order->total * 100,
+            'vnp_CurrCode' => 'VND',
+            'vnp_TxnRef' => $vnp_TxnRef,
             'vnp_OrderInfo' => 'Thanh toan don hang ' . $order->order_number,
             'vnp_OrderType' => 'other',
+            'vnp_Locale' => 'vn',
+            'vnp_ReturnUrl' => env("PUBLIC_CLIENT_URL") . '/payment/vnpay/callback',
+            'vnp_IpAddr' => request()->ip(),
+            'vnp_CreateDate' => now()->format('YmdHis'),
         ];
 
         ksort($params);
         $query = http_build_query($params);
-        $signature = hash_hmac('sha512', $query, config('payment.vnpay.hash_secret'));
-        $paymentUrl = config('payment.vnpay.url') . '?' . $query . '&vnp_SecureHash=' . $signature;
+        $vnp_SecureHash = hash_hmac('sha512', $query, config('payment.vnpay.hash_secret'));
+
+        $paymentUrl = config('payment.vnpay.url') . '?' . $query . '&vnp_SecureHash=' . $vnp_SecureHash;
 
         return response()->json([
             'status' => 'success',
             'message' => 'Chuyển hướng đến VNPAY',
             'data' => [
                 'order_number' => $order->order_number,
+                'payment_url' => $paymentUrl,
+                'total' => $order->total,
+            ],
+        ]);
+    }
+
+    public function retry(Order $order): JsonResponse
+    {
+        // Tạo mã tham chiếu MỚI và DUY NHẤT cho lần thử lại
+        $newTxnRef = $order->order_number . '_retry_' . now()->format('YmdHis') . '_' . rand(100, 999);
+        $order->update(['transaction_id' => $newTxnRef]);
+
+        $params = [
+            'vnp_Version' => '2.1.0',
+            'vnp_Command' => 'pay',
+            'vnp_TmnCode' => config('payment.vnpay.tmn_code'),
+            'vnp_Amount' => $order->total * 100,
+            'vnp_CurrCode' => 'VND',
+            'vnp_TxnRef' => $newTxnRef, // Sử dụng mã mới
+            'vnp_OrderInfo' => 'Thanh toan lai don hang ' . $order->order_number,
+            'vnp_OrderType' => 'other',
+            'vnp_Locale' => 'vn',
+            'vnp_ReturnUrl' => env("PUBLIC_CLIENT_URL") . '/payment/vnpay/callback',
+            'vnp_IpAddr' => request()->ip(),
+            'vnp_CreateDate' => now()->format('YmdHis'),
+        ];
+
+        ksort($params);
+        $query = http_build_query($params);
+        $vnp_SecureHash = hash_hmac('sha512', $query, config('payment.vnpay.hash_secret'));
+        $paymentUrl = config('payment.vnpay.url') . '?' . $query . '&vnp_SecureHash=' . $vnp_SecureHash;
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
                 'payment_url' => $paymentUrl,
                 'total' => $order->total,
             ],

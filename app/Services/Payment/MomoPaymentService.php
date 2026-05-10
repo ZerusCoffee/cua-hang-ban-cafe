@@ -151,4 +151,9 @@ class MomoPaymentService implements PaymentServiceInterface
 
         return hash_hmac('sha256', $rawHash, $this->secretKey) === ($data['signature'] ?? '');
     }
+
+    public function retry(Order $order): JsonResponse
+    {
+        // TODO: Implement retry() method.
+    }
 }
