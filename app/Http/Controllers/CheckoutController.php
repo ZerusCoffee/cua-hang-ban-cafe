@@ -68,7 +68,7 @@ class CheckoutController extends Controller
                         $coupon,
                         $userId,
                         $order->id,
-                        $order->discount_amount
+                        $order->subtotal
                     );
                 } catch (\Exception $e) {
                     Log::info("Lỗi áp dụng mã giảm giá: " . $e->getMessage());
