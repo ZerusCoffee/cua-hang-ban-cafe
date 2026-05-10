@@ -34,7 +34,7 @@ class ResetPasswordRequest extends Notification
     {
         // http://localhost:3000/reset-password?token=xyz&email=abc
         $frontendUrl = env('PUBLIC_CLIENT_URL');
-        $url = $frontendUrl . '/account/reset-password?token=' . $this->token . '&email=' . $notifiable->email;
+        $url = $frontendUrl . '/reset-password?token=' . $this->token . '&email=' . $notifiable->email;
 
         return (new MailMessage)
             ->subject('Yêu cầu đặt lại mật khẩu')
