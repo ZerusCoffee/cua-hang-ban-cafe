@@ -120,7 +120,7 @@ class MomoPaymentService implements PaymentServiceInterface
                             $coupon,
                             $order->customer_id,
                             $order->id,
-                            $order->discount_amount
+                            $order->subtotal
                         );
                     } catch (\Exception $e) {
                         Log::error('Lỗi áp dụng coupon PayPal: ' . $e->getMessage(), [
